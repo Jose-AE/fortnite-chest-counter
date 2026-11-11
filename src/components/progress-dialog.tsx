@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { RiLoader4Line } from "@remixicon/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,22 @@ import {
   ProgressLabel,
   ProgressValue,
 } from "@/components/ui/progress";
+import { LIMIT_MS } from "@/lib/parser";
+
+// Appears once a replay has been parsing for 10 seconds, so the wait does not look like a freeze.
+function SlowNote() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setSlow(true), 10_000);
+    return () => clearTimeout(timer);
+  }, []);
+  return slow ? (
+    <p className="text-xs text-muted-foreground">
+      This replay is taking longer than usual. It is skipped automatically
+      at {LIMIT_MS / 1000} seconds.
+    </p>
+  ) : null;
+}
 
 // The modal shown while replays are being counted.
 export function ProgressDialog({
@@ -59,6 +76,8 @@ export function ProgressDialog({
           chests in total
           {failed > 0 && `, ${failed} not counted`}
         </p>
+        {/* keyed by file, so the 10 seconds start again for each replay */}
+        <SlowNote key={done} />
         <DialogFooter>
           <Button variant="outline" onClick={onCancel}>
             Cancel

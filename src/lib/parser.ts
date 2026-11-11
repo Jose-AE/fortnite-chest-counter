@@ -1,12 +1,15 @@
 import type { Match } from "@/types/match.types";
 
 // Some replays never finish parsing. A normal one takes a few seconds.
-const LIMIT_MS = 60_000;
+export const LIMIT_MS = 20_000;
 
-let stop: ((reason: string) => void) | undefined;
+// The replay hit the time limit. The page remembers these and does not try them again.
+export class ReplayTimeout extends Error {}
+
+let stop: ((reason: Error) => void) | undefined;
 
 // Gives up on the replay being parsed right now, if there is one.
-export const cancelParsing = () => stop?.("Cancelled");
+export const cancelParsing = () => stop?.(new Error("Cancelled"));
 
 // Parses one replay in a Web Worker. Call it for one file at a time.
 export function parseReplay(file: File): Promise<Match> {
@@ -23,10 +26,13 @@ export function parseReplay(file: File): Promise<Match> {
     };
     stop = (reason) => {
       finish();
-      reject(new Error(reason));
+      reject(reason);
     };
     const timer = setTimeout(
-      () => stop?.(`Skipped: took over ${LIMIT_MS / 1000} seconds`),
+      () =>
+        stop?.(
+          new ReplayTimeout(`Skipped: took over ${LIMIT_MS / 1000} seconds`),
+        ),
       LIMIT_MS,
     );
     worker.onmessage = ({ data }) => {
@@ -35,7 +41,8 @@ export function parseReplay(file: File): Promise<Match> {
       else
         resolve({ ...data.match, fileName: file.name, fileSize: file.size });
     };
-    worker.onerror = (e) => stop?.(e.message || "The parser crashed");
+    worker.onerror = (e) =>
+      stop?.(new Error(e.message || "The parser crashed"));
     worker.postMessage(file);
   });
 }

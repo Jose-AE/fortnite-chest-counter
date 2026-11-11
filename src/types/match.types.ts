@@ -4,10 +4,14 @@ export interface Issue {
   message: string;
 }
 
-export interface Match {
-  matchId: string; // used to skip the same match uploaded twice
+// Name and size together identify a replay file without parsing it.
+export interface ReplayFile {
   fileName: string; // from the browser File, not the parser
-  fileSize: number; // bytes, also from the File; name + size spot an already scanned file without parsing it
+  fileSize: number; // bytes, also from the File
+}
+
+export interface Match extends ReplayFile {
+  matchId: string; // used to skip the same match uploaded twice
   playlist: string; // solo, duo, squad...
   durationSeconds: number;
   date: string;

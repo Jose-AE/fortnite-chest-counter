@@ -6,9 +6,14 @@ import { Totals } from "@/components/totals";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/toast";
-import { cancelParsing, parseReplay } from "@/lib/parser";
-import { loadMatches, saveMatches } from "@/lib/saved-matches";
-import type { Issue } from "@/types/match.types";
+import { cancelParsing, parseReplay, ReplayTimeout } from "@/lib/parser";
+import {
+  loadMatches,
+  loadTimedOut,
+  saveMatches,
+  saveTimedOut,
+} from "@/lib/saved-matches";
+import type { Issue, ReplayFile } from "@/types/match.types";
 
 const OPTIONS = [
   {
@@ -39,6 +44,7 @@ function App() {
   const clearSaved = () => {
     if (!confirm("Remove all saved matches from this browser?")) return;
     saveMatches([]);
+    saveTimedOut([]); // so replays that timed out get another try
     setMatches([]);
     setIssues([]);
   };
@@ -55,23 +61,32 @@ function App() {
     const notes: Issue[] = [];
     let handled = 0;
     let omitted = 0; // already counted: left out of the table, reported in one toast at the end
+    const timedOut = loadTimedOut();
+    let slow = 0; // timed out on an earlier count: not tried again, also reported in a toast
     for (const file of files) {
+      const sameFile = (f: ReplayFile) =>
+        f.fileName === file.name && f.fileSize === file.size;
       // same name and size as a saved match: already scanned, no need to parse it again
-      const known = all.some(
-        (m) => m.fileName === file.name && m.fileSize === file.size,
-      );
-      const result = known
-        ? null
-        : await parseReplay(file).catch((e) =>
-            e instanceof Error ? e : new Error(String(e)),
-          );
+      const known = all.some(sameFile);
+      const knownSlow = timedOut.some(sameFile);
+      const result =
+        known || knownSlow
+          ? null
+          : await parseReplay(file).catch((e) =>
+              e instanceof Error ? e : new Error(String(e)),
+            );
       if (cancelled.current) break;
-      if (result instanceof Error)
+      if (knownSlow) slow++;
+      else if (result instanceof Error) {
+        if (result instanceof ReplayTimeout) {
+          timedOut.push({ fileName: file.name, fileSize: file.size });
+          saveTimedOut(timedOut);
+        }
         notes.push({
           fileName: file.name,
           message: result.message.split("\n")[0],
         });
-      else if (
+      } else if (
         result === null ||
         (result.matchId && all.some((m) => m.matchId === result.matchId))
       )
@@ -93,6 +108,15 @@ function App() {
           omitted === 1
             ? "1 replay was omitted as it was already counted"
             : `${omitted} replays were omitted as they were already counted`,
+      });
+    if (slow > 0)
+      toast.add({
+        type: "info",
+        title:
+          slow === 1
+            ? "1 replay was skipped as it timed out before"
+            : `${slow} replays were skipped as they timed out before`,
+        description: "Clear saved to try again.",
       });
   };
 
