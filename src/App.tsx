@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
+import { Links } from "@/components/links";
 import { MatchesCard } from "@/components/matches-card";
 import { ProgressDialog } from "@/components/progress-dialog";
 import { ReplayPicker } from "@/components/replay-picker";
 import { Hero, StatTiles } from "@/components/totals";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
+import { formatCount } from "@/lib/format";
 import { cancelParsing, parseReplay, ReplayTimeout } from "@/lib/parser";
 import {
   loadMatches,
@@ -147,7 +149,7 @@ function App() {
               onClick={countChests}
             >
               Count chests
-              {files.length > 0 && ` in ${files.length} replays`}
+              {files.length > 0 && ` in ${formatCount(files.length, "replay")}`}
             </Button>
           </section>
         </div>
@@ -162,12 +164,15 @@ function App() {
           onClear={clearSaved}
         />
 
-        <footer className="pt-2 text-center text-xs text-muted-foreground">
+        {/* bottom padding keeps the last line clear of the pinned links on a narrow screen */}
+        <footer className="pt-2 pb-8 text-center text-xs text-muted-foreground">
           Chest Counter is a fan-made tool. It is not affiliated with, endorsed
           or sponsored by Epic Games. Fortnite is a trademark of Epic Games,
           Inc.
         </footer>
       </main>
+
+      <Links />
 
       <ProgressDialog
         open={busy}

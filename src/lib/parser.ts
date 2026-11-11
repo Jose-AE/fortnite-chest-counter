@@ -6,6 +6,17 @@ export const LIMIT_MS = 20_000;
 // The replay hit the time limit. The page remembers these and does not try them again.
 export class ReplayTimeout extends Error {}
 
+// What the table shows for a failure reported by the .NET reader. Its own messages are codes such as
+// "Arg_ArgumentOutOfRangeException" (publish strips the readable text), so only the ones we recognise are passed on.
+const readable = (raw: string) =>
+  /could not tell which player/i.test(raw)
+    ? "Could not tell who recorded this replay"
+    : /invalid replay/i.test(raw)
+      ? "Not a Fortnite replay file"
+      : /fetch|import|module|network/i.test(raw)
+        ? "Could not load the replay reader. Check your connection and reload the page."
+        : "Could not read this replay. It may be damaged or from a Fortnite version that is not supported yet.";
+
 let stop: ((reason: Error) => void) | undefined;
 
 // Gives up on the replay being parsed right now, if there is one.
@@ -37,12 +48,16 @@ export function parseReplay(file: File): Promise<Match> {
     );
     worker.onmessage = ({ data }) => {
       finish();
-      if (data.error) reject(new Error(data.error));
-      else
+      if (data.error) {
+        console.warn(`${file.name}: ${data.error}`); // the raw reason, for bug reports
+        reject(new Error(readable(data.error)));
+      } else
         resolve({ ...data.match, fileName: file.name, fileSize: file.size });
     };
-    worker.onerror = (e) =>
-      stop?.(new Error(e.message || "The parser crashed"));
+    worker.onerror = (e) => {
+      console.warn(`${file.name}: ${e.message}`);
+      stop?.(new Error(readable(e.message || "")));
+    };
     worker.postMessage(file);
   });
 }

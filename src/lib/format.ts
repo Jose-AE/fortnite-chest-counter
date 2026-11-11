@@ -2,6 +2,10 @@
 const number = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 export const formatNumber = (value: number) => number.format(value);
 
+// (1, "match") -> "1 match", (1200, "match") -> "1,200 matches"
+export const formatCount = (count: number, noun: string) =>
+  `${formatNumber(count)} ${noun}${count === 1 ? "" : noun.endsWith("ch") ? "es" : "s"}`;
+
 // 0.05098 -> "5.10%". Two decimals, because these chances are small and the change per match is in the decimals.
 export const formatPercent = (fraction: number) =>
   fraction > 0 && fraction < 0.0001

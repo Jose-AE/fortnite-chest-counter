@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  formatCount,
   formatDateTime,
   formatDay,
   formatNumber,
@@ -164,7 +165,7 @@ export function Hero({
       </CardContent>
       <CardContent className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         {counted
-          ? `across ${formatNumber(summary.matchCount)} matches, ${from === to ? from : `${from} to ${to}`}`
+          ? `across ${formatCount(summary.matchCount, "match")}, ${from === to ? from : `${from} to ${to}`}`
           : "Add replays and press Count chests."}
         {failed > 0 && (
           <Badge variant="destructive">{failed} not counted</Badge>

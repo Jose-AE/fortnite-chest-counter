@@ -52,7 +52,7 @@ export function MatchesTable({
               <TableCell
                 colSpan={5}
                 title={issue.message}
-                className="max-w-64 truncate text-right text-destructive"
+                className="text-right whitespace-normal text-destructive"
               >
                 {issue.message}
               </TableCell>
