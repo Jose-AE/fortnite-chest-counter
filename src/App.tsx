@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   RiCloseLine,
   RiKey2Line,
+  RiLoader4Line,
   RiTeamLine,
   RiUploadCloud2Line,
 } from "@remixicon/react";
@@ -23,7 +24,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { parseReplay } from "@/lib/parser";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Progress,
+  ProgressLabel,
+  ProgressValue,
+} from "@/components/ui/progress";
+import { cancelParsing, parseReplay } from "@/lib/parser";
 import { cn } from "@/lib/utils";
 import type { Match } from "@/types/match.types";
 
@@ -52,7 +66,13 @@ function App() {
     setFiles(next);
     setResults(null);
   };
+  const cancelled = useRef(false);
+  const cancel = () => {
+    cancelled.current = true;
+    cancelParsing();
+  };
   const countChests = async () => {
+    cancelled.current = false;
     setBusy(true);
     const done: (Match | Error)[] = [];
     setResults(done);
@@ -60,6 +80,7 @@ function App() {
       const result = await parseReplay(file).catch((e) =>
         e instanceof Error ? e : new Error(String(e)),
       );
+      if (cancelled.current) break; // files not reached stay uncounted
       const duplicate =
         !(result instanceof Error) &&
         result.matchId &&
@@ -68,7 +89,6 @@ function App() {
         duplicate ? new Error("Same match as an earlier file") : result,
       );
       setResults([...done]);
-      await new Promise((r) => setTimeout(r)); // let the page repaint between replays
     }
     setBusy(false);
   };
@@ -105,6 +125,7 @@ function App() {
   const squad = options.squad ? sum("squad") : 0;
   const show = (value: number) => (counted ? value : "?");
   const failed = rows.filter((row) => row.error).length;
+  const doneCount = results?.length ?? 0;
 
   return (
     <div className="relative min-h-svh overflow-hidden">
@@ -201,9 +222,8 @@ function App() {
             disabled={files.length === 0 || busy}
             onClick={countChests}
           >
-            {busy
-              ? `Counting ${results?.length ?? 0} of ${files.length}`
-              : `Count chests${files.length > 0 ? ` in ${files.length} replays` : ""}`}
+            Count chests
+            {files.length > 0 && ` in ${files.length} replays`}
           </Button>
         </section>
 
@@ -317,6 +337,44 @@ function App() {
           </Card>
         </section>
       </main>
+
+      {/* no onOpenChange: it stays open until counting ends or is cancelled */}
+      <Dialog open={busy}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RiLoader4Line
+                aria-hidden
+                className="size-4 animate-spin text-primary"
+              />
+              Counting chests
+            </DialogTitle>
+            <DialogDescription>
+              Replays are read on your device. Nothing is uploaded.
+            </DialogDescription>
+          </DialogHeader>
+          <Progress value={doneCount} max={files.length}>
+            <ProgressLabel className="min-w-0 flex-1 truncate">
+              {files[doneCount]?.name}
+            </ProgressLabel>
+            <ProgressValue>
+              {() => `${doneCount} of ${files.length}`}
+            </ProgressValue>
+          </Progress>
+          <p className="text-sm text-muted-foreground">
+            <span className="text-3xl font-black text-primary tabular-nums">
+              {opened + squad}
+            </span>{" "}
+            chests so far
+            {failed > 0 && `, ${failed} replays not counted`}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancel}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
