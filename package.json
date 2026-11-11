@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:wasm": "dotnet publish wasm -c Release && node -e \"fs.rmSync('public/_framework',{recursive:true,force:true});fs.cpSync('wasm/bin/Release/net10.0/publish/wwwroot/_framework','public/_framework',{recursive:true})\""
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

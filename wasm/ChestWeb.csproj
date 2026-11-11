@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <!-- Chest counter compiled to WebAssembly. Build with: npm run build:wasm -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FortniteReplayReader" Version="3.1.0" />
+    <!-- The replay library creates its model classes by reflection, so publish must not trim them away. -->
+    <TrimmerRootAssembly Include="FortniteReplayReader" />
+    <TrimmerRootAssembly Include="Unreal.Core" />
+  </ItemGroup>
+</Project>
