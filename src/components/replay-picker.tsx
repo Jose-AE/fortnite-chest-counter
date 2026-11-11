@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { RiCloseLine, RiUploadCloud2Line } from "@remixicon/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
 
 // Every file in a drop, including the files inside dropped folders (dataTransfer.files lists a folder as one empty entry).
 async function droppedFiles(items: DataTransferItemList): Promise<File[]> {
@@ -63,6 +64,9 @@ export function ReplayPicker({
     e.target.value = ""; // so picking the same files again still fires
   };
 
+  // With replays listed, the drop zone drops its icon and hints so the list fits in the height they took.
+  const compact = files.length > 0;
+
   return (
     <>
       <div
@@ -74,9 +78,12 @@ export function ReplayPicker({
             toast.add({ type: "error", title: "Could not read that drop" }),
           );
         }}
-        className="flex flex-col items-center gap-2 border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-8 text-center"
+        className={cn(
+          "flex flex-col items-center gap-2 border-2 border-dashed border-primary/40 bg-primary/5 px-4 text-center",
+          compact ? "py-4" : "py-8",
+        )}
       >
-        <RiUploadCloud2Line className="size-8 text-primary" />
+        {!compact && <RiUploadCloud2Line className="size-8 text-primary" />}
         <span className="font-semibold">Drop replays or a folder here</span>
         <div className="flex flex-wrap justify-center gap-2">
           <Button
@@ -94,13 +101,17 @@ export function ReplayPicker({
             Choose folder
           </Button>
         </div>
-        <code className="mt-2 text-[11px] break-all text-muted-foreground">
-          %LOCALAPPDATA%\FortniteGame\Saved\Demos
-        </code>
-        <span className="text-xs text-muted-foreground">
-          Your browser may ask to "upload" a folder. The files stay on your
-          device.
-        </span>
+        {!compact && (
+          <>
+            <code className="mt-2 text-[11px] break-all text-muted-foreground">
+              %LOCALAPPDATA%\FortniteGame\Saved\Demos
+            </code>
+            <span className="text-xs text-muted-foreground">
+              Your browser may ask to "upload" a folder. The files stay on your
+              device.
+            </span>
+          </>
+        )}
         <input
           ref={fileInput}
           type="file"
@@ -120,7 +131,8 @@ export function ReplayPicker({
       </div>
 
       {files.length > 0 && (
-        <ul className="max-h-56 divide-y overflow-y-auto border bg-card text-sm">
+        // fixed height on desktop: the space the hidden hints took, so the row beside it never changes height
+        <ul className="max-h-38 divide-y overflow-y-auto border bg-card text-sm [scrollbar-color:--theme(--color-muted-foreground/50%)_transparent] scrollbar-thin lg:h-38">
           {files.map((file, i) => (
             <li key={i} className="flex items-center gap-2 px-3 py-2">
               <span className="flex-1 truncate">{file.name}</span>

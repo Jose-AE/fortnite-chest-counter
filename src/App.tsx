@@ -117,10 +117,6 @@ function App() {
     <div className="relative min-h-svh overflow-hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_80%_-10%,--theme(--color-primary/18%),transparent)]"
-      />
-      <div
-        aria-hidden
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,--theme(--color-foreground/4%)_1px,transparent_1px),linear-gradient(to_bottom,--theme(--color-foreground/4%)_1px,transparent_1px)] bg-[size:3rem_3rem]"
       />
 
@@ -166,7 +162,7 @@ function App() {
 
         {/* bottom padding keeps the last line clear of the pinned links on a narrow screen */}
         <footer className="pt-2 pb-8 text-center text-xs text-muted-foreground">
-          Chest Counter is a fan-made tool. It is not affiliated with, endorsed
+          Fortnite Chest Counter is a fan-made tool. It is not affiliated with, endorsed
           or sponsored by Epic Games. Fortnite is a trademark of Epic Games,
           Inc.
         </footer>

@@ -1,6 +1,6 @@
-# Chest Counter
+# Fortnite Chest Counter
 
-![Chest Counter: count every chest you opened, straight from your replay files](public/og.png)
+![Fortnite Chest Counter: count every chest you opened, straight from your replay files](public/og.png)
 
 Counts the chests you opened in Fortnite by reading your replay files, and works out your chance of having received the event's shop token.
 
@@ -74,4 +74,4 @@ Some things used here are not covered by that license and stay under their own t
 
 ## Not affiliated with Epic Games
 
-Chest Counter is a fan-made tool. It is not affiliated with, endorsed or sponsored by Epic Games. Fortnite is a trademark of Epic Games, Inc.
+Fortnite Chest Counter is a fan-made tool. It is not affiliated with, endorsed or sponsored by Epic Games. Fortnite is a trademark of Epic Games, Inc.
