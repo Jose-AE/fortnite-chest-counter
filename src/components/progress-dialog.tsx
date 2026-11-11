@@ -14,6 +14,7 @@ import {
   ProgressLabel,
   ProgressValue,
 } from "@/components/ui/progress";
+import { formatNumber } from "@/lib/format";
 import { LIMIT_MS } from "@/lib/parser";
 
 // Appears once a replay has been parsing for 10 seconds, so the wait does not look like a freeze.
@@ -71,7 +72,7 @@ export function ProgressDialog({
         </Progress>
         <p className="text-sm text-muted-foreground">
           <span className="text-3xl font-black text-primary tabular-nums">
-            {totalChests}
+            {formatNumber(totalChests)}
           </span>{" "}
           chests in total
           {failed > 0 && `, ${failed} not counted`}

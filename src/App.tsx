@@ -1,10 +1,9 @@
 import { useRef, useState } from "react";
-import { MatchesTable } from "@/components/matches-table";
+import { MatchesCard } from "@/components/matches-card";
 import { ProgressDialog } from "@/components/progress-dialog";
 import { ReplayPicker } from "@/components/replay-picker";
-import { Totals } from "@/components/totals";
+import { Hero, StatTiles } from "@/components/totals";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/toast";
 import { cancelParsing, parseReplay, ReplayTimeout } from "@/lib/parser";
 import {
@@ -13,23 +12,13 @@ import {
   saveMatches,
   saveTimedOut,
 } from "@/lib/saved-matches";
+import { summarize } from "@/lib/stats";
 import type { Issue, ReplayFile } from "@/types/match.types";
-
-const OPTIONS = [
-  {
-    id: "squad",
-    label: "Include squad opens",
-    hint: "Chests your teammates opened in your matches",
-  },
-] as const;
-
-type OptionId = (typeof OPTIONS)[number]["id"];
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
-  const [options, setOptions] = useState<Record<OptionId, boolean>>({
-    squad: false,
-  });
+  // whether teammates' chests count towards the totals and the chart
+  const [includeSquad, setIncludeSquad] = useState(false);
   // every match counted so far, including earlier visits (kept in localStorage)
   const [matches, setMatches] = useState(loadMatches);
   // files from the last count that could not be counted
@@ -120,16 +109,7 @@ function App() {
       });
   };
 
-  const opened = matches.reduce(
-    (total, m) => total + m.chestCountSearched + m.chestCountBroken,
-    0,
-  );
-  const squad = options.squad
-    ? matches.reduce(
-        (total, m) => total + m.teamChestCountSearched + m.teamChestCountBroken,
-        0,
-      )
-    : 0;
+  const summary = summarize(matches, includeSquad);
 
   return (
     <div className="relative min-h-svh overflow-hidden">
@@ -142,76 +122,58 @@ function App() {
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,--theme(--color-foreground/4%)_1px,transparent_1px),linear-gradient(to_bottom,--theme(--color-foreground/4%)_1px,transparent_1px)] bg-[size:3rem_3rem]"
       />
 
-      <main className="relative mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[22rem_1fr] lg:py-16">
-        <section className="flex flex-col gap-4">
-          <ReplayPicker
-            files={files}
-            disabled={busy}
-            onAdd={(added) => updateFiles([...files, ...added])}
-            onRemove={(index) =>
-              updateFiles(files.filter((_, i) => i !== index))
-            }
-          />
-
-          <fieldset className="flex flex-col gap-3 border bg-card p-4">
-            <legend className="px-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-              Options
-            </legend>
-            {OPTIONS.map((option) => (
-              <label key={option.id} className="flex cursor-pointer gap-3">
-                <Checkbox
-                  className="mt-1"
-                  checked={options[option.id]}
-                  onCheckedChange={(checked) =>
-                    setOptions({ ...options, [option.id]: checked })
-                  }
-                />
-                <span>
-                  <span className="block text-sm font-medium">
-                    {option.label}
-                  </span>
-                  <span className="block text-xs text-muted-foreground">
-                    {option.hint}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </fieldset>
-
-          <Button
-            size="lg"
-            className="h-12 text-base font-bold tracking-wide uppercase"
-            disabled={files.length === 0 || busy}
-            onClick={countChests}
-          >
-            Count chests
-            {files.length > 0 && ` in ${files.length} replays`}
-          </Button>
-        </section>
-
-        <section className="flex flex-col gap-4">
-          <Totals
-            opened={opened}
-            squad={squad}
-            includeSquad={options.squad}
-            matchCount={matches.length}
+      <main className="relative mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 lg:py-14">
+        <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+          <Hero
+            summary={summary}
             failed={issues.length}
+            includeSquad={includeSquad}
+            onIncludeSquad={setIncludeSquad}
           />
-          <MatchesTable
-            matches={matches}
-            issues={issues}
-            includeSquad={options.squad}
-            busy={busy}
-            onClear={clearSaved}
-          />
-        </section>
+          {/* first on a phone, where adding replays is the first thing to do */}
+          <section className="order-first flex flex-col gap-4 lg:order-last">
+            <ReplayPicker
+              files={files}
+              disabled={busy}
+              onAdd={(added) => updateFiles([...files, ...added])}
+              onRemove={(index) =>
+                updateFiles(files.filter((_, i) => i !== index))
+              }
+            />
+            <Button
+              size="lg"
+              className="h-12 text-base font-bold tracking-wide uppercase"
+              disabled={files.length === 0 || busy}
+              onClick={countChests}
+            >
+              Count chests
+              {files.length > 0 && ` in ${files.length} replays`}
+            </Button>
+          </section>
+        </div>
+
+        <StatTiles summary={summary} includeSquad={includeSquad} />
+
+        <MatchesCard
+          matches={matches}
+          issues={issues}
+          includeSquad={includeSquad}
+          busy={busy}
+          onClear={clearSaved}
+        />
+
+        <footer className="pt-2 text-center text-xs text-muted-foreground">
+          Chest Counter is a fan-made tool. It is not affiliated with, endorsed
+          or sponsored by Epic Games. Fortnite is a trademark of Epic Games,
+          Inc.
+        </footer>
       </main>
 
       <ProgressDialog
         open={busy}
         files={files}
         done={progress}
-        totalChests={opened + squad}
+        totalChests={summary.total}
         failed={issues.length}
         onCancel={cancel}
       />
