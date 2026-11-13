@@ -126,10 +126,11 @@ class ChestReader : FortniteReplayReader.ReplayReader
         var opened = freshChannels.Remove(channelIndex);
         LootEvent made = null;
 
-        // The pawn is 0 while that player is out of view, then re-sent when they return: 0 does not mean "nobody".
-        if (pawn is > 0)
+        // The pawn is 0 while that player is out of view, then re-sent when they return: 0 means "unknown", not "nobody",
+        // and not "the previous opener" either, or a refilled chest reopened out of view would be credited to whoever opened it before.
+        if (pawn != null)
         {
-            chest.Pawn = PlayerOfPawn(pawn.Value); // null when that pawn cannot be matched to a player: better unknown than the previous opener
+            chest.Pawn = pawn > 0 ? PlayerOfPawn(pawn.Value) : null; // also null when that pawn cannot be matched to a player
             if (chest.Pending != null && chest.Pawn != null) { chest.Pending.Opener = chest.Pawn; chest.Pending = null; } // opener arrived after the open itself
         }
         if (searched == false) { chest.Searched = false; chest.Pending = null; } // refilled
