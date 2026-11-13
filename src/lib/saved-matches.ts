@@ -1,24 +1,13 @@
+import { readJson, writeJson } from "@/lib/storage";
 import type { Match, ReplayFile } from "@/types/match.types";
 
 const MATCHES_KEY = "chest-counter:matches";
 const TIMED_OUT_KEY = "chest-counter:timed-out";
 
 // A saved list, or an empty one when storage is empty, blocked or holds something else.
-const read = (key: string): unknown[] => {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(key) ?? "[]");
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
-  }
-};
-
-const write = (key: string, value: unknown) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // storage is full or blocked: this visit still works, it just is not remembered
-  }
+const readList = (key: string) => {
+  const saved = readJson(key);
+  return Array.isArray(saved) ? (saved as unknown[]) : [];
 };
 
 const isReplayFile = (f: unknown): f is ReplayFile =>
@@ -44,7 +33,7 @@ export const toMatches = (list: unknown[]) =>
   );
 
 // Matches counted on earlier visits.
-export const loadMatches = () => toMatches(read(MATCHES_KEY));
+export const loadMatches = () => toMatches(readList(MATCHES_KEY));
 
 // The saved matches plus the ones in `incoming` that are not already saved.
 export const mergeMatches = (saved: Match[], incoming: Match[]) => {
@@ -60,10 +49,10 @@ export const mergeMatches = (saved: Match[], incoming: Match[]) => {
   return all;
 };
 
-export const saveMatches = (matches: Match[]) => write(MATCHES_KEY, matches);
+export const saveMatches = (matches: Match[]) => writeJson(MATCHES_KEY, matches);
 
 // Replays that hit the time limit, so they are not tried again on every upload.
-export const loadTimedOut = () => read(TIMED_OUT_KEY).filter(isReplayFile);
+export const loadTimedOut = () => readList(TIMED_OUT_KEY).filter(isReplayFile);
 
 export const saveTimedOut = (files: ReplayFile[]) =>
-  write(TIMED_OUT_KEY, files);
+  writeJson(TIMED_OUT_KEY, files);

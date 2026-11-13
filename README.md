@@ -40,7 +40,8 @@ The replay reader is C# ([`wasm/`](wasm/), using the [FortniteReplayReader](http
 |---|---|
 | Replay reader, exposed to JavaScript as `Api.Count` | [`wasm/`](wasm/) |
 | Runs the reader in a Web Worker, one fresh worker per replay | [`src/lib/parser.ts`](src/lib/parser.ts), [`src/lib/parser.worker.ts`](src/lib/parser.worker.ts) |
-| Saved matches (localStorage) | [`src/lib/saved-matches.ts`](src/lib/saved-matches.ts) |
+| Saved matches and settings (localStorage) | [`src/lib/saved-matches.ts`](src/lib/saved-matches.ts), [`src/lib/settings.ts`](src/lib/settings.ts), [`src/lib/storage.ts`](src/lib/storage.ts) |
+| Export and Import file | [`src/lib/backup.ts`](src/lib/backup.ts) |
 | Totals, averages, chart data, token chance | [`src/lib/stats.ts`](src/lib/stats.ts) |
 | Page | [`src/App.tsx`](src/App.tsx), [`src/components/`](src/components/) |
 

@@ -3,9 +3,11 @@ import { Links } from "@/components/links";
 import { MatchesCard } from "@/components/matches-card";
 import { ProgressDialog } from "@/components/progress-dialog";
 import { ReplayPicker } from "@/components/replay-picker";
-import { Hero, StatTiles } from "@/components/totals";
+import { Hero } from "@/components/hero";
+import { StatTiles } from "@/components/stat-tiles";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
+import { downloadBackup, readBackup } from "@/lib/backup";
 import { formatCount } from "@/lib/format";
 import { cancelParsing, parseReplay, ReplayTimeout } from "@/lib/parser";
 import {
@@ -14,17 +16,20 @@ import {
   mergeMatches,
   saveMatches,
   saveTimedOut,
-  toMatches,
 } from "@/lib/saved-matches";
+import { loadSettings, saveSettings } from "@/lib/settings";
 import { summarize } from "@/lib/stats";
-import type { Issue, Match, ReplayFile } from "@/types/match.types";
+import type { Issue, ReplayFile } from "@/types/match.types";
+import type { Settings } from "@/types/settings.types";
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
-  // whether teammates' chests count towards the totals and the chart
-  const [includeSquad, setIncludeSquad] = useState(false);
   // every match counted so far, including earlier visits (kept in localStorage)
   const [matches, setMatches] = useState(loadMatches);
+  // token odds, chests added by hand and the teammates checkbox (kept in localStorage)
+  const [settings, setSettings] = useState(loadSettings);
+  // whether teammates' chests count towards the totals and the chart, remembered with the other settings
+  const includeSquad = settings.includeSquad;
   // files from the last count that could not be counted
   const [issues, setIssues] = useState<Issue[]>([]);
   const [progress, setProgress] = useState(0); // files handled in the running count
@@ -41,25 +46,14 @@ function App() {
     setMatches([]);
     setIssues([]);
   };
-  const exportMatches = () => {
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(matches, null, 2)], { type: "application/json" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `chest-counter-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const updateSettings = (next: Settings) => {
+    saveSettings(next);
+    setSettings(next);
   };
   const importMatches = async (file: File) => {
-    let incoming: Match[];
-    try {
-      const data: unknown = JSON.parse(await file.text());
-      incoming = Array.isArray(data) ? toMatches(data) : [];
-    } catch {
-      incoming = [];
-    }
-    if (incoming.length === 0) {
+    const { matches: incoming, settings: imported } = await readBackup(file);
+    if (imported) updateSettings(imported);
+    if (incoming.length === 0 && !imported) {
       toast.add({
         type: "warning",
         title: "No matches found in that file",
@@ -76,7 +70,10 @@ function App() {
       title:
         added > 0
           ? `Imported ${formatCount(added, "match")}`
-          : "Every match in that file was already saved",
+          : incoming.length > 0
+            ? "Every match in that file was already saved"
+            : "No matches in that file",
+      description: imported ? "Settings were imported too." : undefined,
     });
   };
   const cancelled = useRef(false);
@@ -151,7 +148,7 @@ function App() {
       });
   };
 
-  const summary = summarize(matches, includeSquad);
+  const summary = summarize(matches, includeSquad, settings.extraChests);
 
   return (
     <div className="relative min-h-svh overflow-hidden">
@@ -166,7 +163,11 @@ function App() {
             summary={summary}
             failed={issues.length}
             includeSquad={includeSquad}
-            onIncludeSquad={setIncludeSquad}
+            onIncludeSquad={(value) =>
+              updateSettings({ ...settings, includeSquad: value })
+            }
+            settings={settings}
+            onSettings={updateSettings}
           />
           {/* first on a phone, where adding replays is the first thing to do */}
           <section className="order-first flex flex-col gap-4 lg:order-last">
@@ -190,7 +191,7 @@ function App() {
           </section>
         </div>
 
-        <StatTiles summary={summary} includeSquad={includeSquad} />
+        <StatTiles summary={summary} />
 
         <MatchesCard
           matches={matches}
@@ -198,7 +199,7 @@ function App() {
           includeSquad={includeSquad}
           busy={busy}
           onClear={clearSaved}
-          onExport={exportMatches}
+          onExport={() => downloadBackup(matches, settings)}
           onImport={importMatches}
         />
 

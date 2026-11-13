@@ -1,10 +1,4 @@
-import {
-  RiKey2Line,
-  RiSpeedUpLine,
-  RiStackLine,
-  RiTeamLine,
-  RiTrophyLine,
-} from "@remixicon/react";
+import { SettingsDialog } from "@/components/settings-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -16,26 +10,22 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  formatCount,
-  formatDateTime,
-  formatDay,
-  formatNumber,
-  formatPercent,
-} from "@/lib/format";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  CHESTS_FOR_EVEN_CHANCE,
-  TOKEN_ODDS,
-  tokenChance,
-  type Summary,
-} from "@/lib/stats";
+  formatCount,
+  formatDay,
+  formatNumber,
+  formatPercent,
+} from "@/lib/format";
+import { DEFAULT_SETTINGS } from "@/lib/settings";
+import { chestsForEvenChance, tokenChance, type Summary } from "@/lib/stats";
 import { cn } from "@/lib/utils";
+import type { Settings } from "@/types/settings.types";
 
-// Before any match is counted every number is a real 0, shown dimmed so it reads as "nothing yet".
+// Before anything is counted the total is a real 0, shown dimmed so it reads as "nothing yet".
 
 // The one big number, and the switch that decides whether teammates' chests are part of it.
 export function Hero({
@@ -43,19 +33,26 @@ export function Hero({
   failed,
   includeSquad,
   onIncludeSquad,
+  settings,
+  onSettings,
 }: {
   summary: Summary;
   failed: number;
   includeSquad: boolean;
   onIncludeSquad: (value: boolean) => void;
+  settings: Settings;
+  onSettings: (settings: Settings) => void;
 }) {
-  const counted = summary.matchCount > 0;
+  // extra chests alone are enough to show a total and a chance
+  const counted = summary.total > 0;
   const from = formatDay(summary.from);
   const to = formatDay(summary.to);
   const total = formatNumber(summary.total);
   const commas = total.split(",").length - 1;
   const digits = total.length - commas;
-  const chance = tokenChance(summary.total);
+  const odds = settings.tokenOdds;
+  const chance = tokenChance(summary.total, odds);
+  const oddsChanged = odds !== DEFAULT_SETTINGS.tokenOdds;
 
   return (
     <Card className="justify-between">
@@ -63,7 +60,7 @@ export function Hero({
         <CardDescription className="tracking-widest uppercase">
           Total chests
         </CardDescription>
-        <CardAction>
+        <CardAction className="flex items-center gap-3">
           <Tooltip>
             {/* the label itself is the trigger: a button here would wrap the checkbox, which is already one */}
             <TooltipTrigger
@@ -88,6 +85,7 @@ export function Hero({
               not counted. The real number is probably higher.
             </TooltipContent>
           </Tooltip>
+          <SettingsDialog settings={settings} onChange={onSettings} />
         </CardAction>
       </CardHeader>
       {/* The middle of three rows, so the card's justify-between centres it between the label and the footer line. */}
@@ -130,21 +128,21 @@ export function Hero({
                 >
                   <p>
                     <strong>Every chest is its own roll.</strong> Each one has
-                    a 1 in {formatNumber(TOKEN_ODDS)} chance, and chests do not
+                    a 1 in {formatNumber(odds)} chance, and chests do not
                     add up towards a guaranteed token.
                   </p>
                   <p>
                     The chance that none of your {total} chests dropped one is
-                    ({formatNumber(TOKEN_ODDS - 1)} ÷ {formatNumber(TOKEN_ODDS)}
+                    ({formatNumber(odds - 1)} ÷ {formatNumber(odds)}
                     ) multiplied by itself {total} times, which is{" "}
                     {formatPercent(1 - chance)}. So the chance that at least
                     one did is 100% − {formatPercent(1 - chance)} ={" "}
                     <strong>{formatPercent(chance)}</strong>.
                   </p>
                   <p>
-                    After {formatNumber(TOKEN_ODDS)} chests the chance is{" "}
-                    {formatPercent(tokenChance(TOKEN_ODDS))}, not 100%. A 50%
-                    chance takes about {formatNumber(CHESTS_FOR_EVEN_CHANCE)}{" "}
+                    After {formatNumber(odds)} chests the chance is{" "}
+                    {formatPercent(tokenChance(odds, odds))}, not 100%. A 50%
+                    chance takes about {formatNumber(chestsForEvenChance(odds))}{" "}
                     chests.
                   </p>
                   {includeSquad && (
@@ -157,95 +155,24 @@ export function Hero({
               </Tooltip>
               <p className="mt-1 text-xs/relaxed text-muted-foreground">
                 The chance that at least one of these chests dropped a token, at
-                1 in {formatNumber(TOKEN_ODDS)} per chest.
+                1 in {formatNumber(odds)}
+                {oddsChanged && " (custom odds)"} per chest.
               </p>
             </div>
           )}
         </div>
       </CardContent>
       <CardContent className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        {counted
-          ? `across ${formatCount(summary.matchCount, "match")}, ${from === to ? from : `${from} to ${to}`}`
-          : "Add replays and press Count chests."}
+        {summary.matchCount > 0 &&
+          `across ${formatCount(summary.matchCount, "match")}, ${from === to ? from : `${from} to ${to}`}`}
+        {summary.matchCount > 0 && summary.extraChests > 0 && ", "}
+        {summary.extraChests > 0 &&
+          `including ${formatCount(summary.extraChests, "chest")} added by hand`}
+        {!counted && "Add replays and press Count chests."}
         {failed > 0 && (
           <Badge variant="destructive">{failed} not counted</Badge>
         )}
       </CardContent>
-    </Card>
-  );
-}
-
-export function StatTiles({
-  summary,
-  includeSquad,
-}: {
-  summary: Summary;
-  includeSquad: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "grid grid-cols-2 gap-4 md:grid-cols-5",
-        summary.matchCount === 0 && "opacity-50",
-      )}
-    >
-      <Tile
-        icon={RiKey2Line}
-        label="Opened by you"
-        value={formatNumber(summary.opened)}
-      />
-      <Tile
-        icon={RiTeamLine}
-        label="Teammate chests"
-        value={formatNumber(summary.teammates)}
-        note={includeSquad ? "included in the total" : "not in the total"}
-      />
-      <Tile
-        icon={RiStackLine}
-        label="Per match"
-        value={formatNumber(summary.perMatch)}
-        note="average"
-      />
-      <Tile
-        icon={RiTrophyLine}
-        label="Best match"
-        value={formatNumber(summary.best?.count ?? 0)}
-        note={summary.best ? formatDateTime(summary.best.date) : undefined}
-      />
-      <Tile
-        icon={RiSpeedUpLine}
-        label="Per minute"
-        value={formatNumber(summary.perMinute)}
-        note="of match time"
-        className="col-span-2 md:col-span-1"
-      />
-    </div>
-  );
-}
-
-function Tile({
-  icon: Icon,
-  label,
-  value,
-  note,
-  className,
-}: {
-  icon: typeof RiKey2Line;
-  label: string;
-  value: string;
-  note?: string;
-  className?: string;
-}) {
-  return (
-    <Card className={className}>
-      <CardHeader>
-        <CardDescription className="flex items-center gap-2">
-          <Icon className="size-4 text-primary" />
-          {label}
-        </CardDescription>
-        <CardTitle className="text-4xl font-black">{value}</CardTitle>
-        <CardDescription className="min-h-5">{note}</CardDescription>
-      </CardHeader>
     </Card>
   );
 }
