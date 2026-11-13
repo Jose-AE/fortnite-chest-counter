@@ -132,3 +132,8 @@
     @apply font-sans;
     }
 }
+/* A thin scrollbar in the page's colours instead of the browser's white track. Used by every box that scrolls. */
+@utility scrollbar-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-foreground) 20%, transparent) transparent;
+}

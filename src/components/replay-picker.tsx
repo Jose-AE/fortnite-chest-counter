@@ -132,7 +132,7 @@ export function ReplayPicker({
 
       {files.length > 0 && (
         // fixed height on desktop: the space the hidden hints took, so the row beside it never changes height
-        <ul className="max-h-38 divide-y overflow-y-auto border bg-card text-sm [scrollbar-color:--theme(--color-muted-foreground/50%)_transparent] scrollbar-thin lg:h-38">
+        <ul className="max-h-38 divide-y overflow-y-auto border bg-card text-sm scrollbar-subtle lg:h-38">
           {files.map((file, i) => (
             <li key={i} className="flex items-center gap-2 px-3 py-2">
               <span className="flex-1 truncate">{file.name}</span>

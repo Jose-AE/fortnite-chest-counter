@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { formatNumber } from "@/lib/format";
 import type { ChartBar, ChartGroup } from "@/lib/stats";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,12 @@ export function MatchesChart({
   controls: React.ReactNode; // shown top right, across from the legend
 }) {
   const [tip, setTip] = useState<{ index: number; x: number; y: number }>();
+
+  // start at the newest columns when the plot scrolls; again when the columns change (new matches, per match / per day)
+  const plot = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (plot.current) plot.current.scrollLeft = plot.current.scrollWidth;
+  }, [bars.length, group]);
 
   const top = niceCeil(Math.max(1, ...bars.map((bar) => bar.you + bar.squad)));
   const average =
@@ -76,9 +82,10 @@ export function MatchesChart({
 
         {/* shortcut: columns never get thinner than 6px, so past about 150 columns the plot scrolls sideways; switch to per day if that gets awkward */}
         <div
+          ref={plot}
           role="img"
           aria-label={`Chests per ${group}, ${bars.length} columns, average ${formatNumber(average)}. The table view lists every match.`}
-          className="h-60 min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+          className="h-60 min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-subtle"
         >
           <div className="relative flex h-full w-max min-w-full">
             <div className="pointer-events-none absolute inset-x-0 top-0 bottom-5">

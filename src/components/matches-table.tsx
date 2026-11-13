@@ -31,7 +31,7 @@ export function MatchesTable({
   );
 
   return (
-    <div className="max-h-[32rem] overflow-y-auto">
+    <div className="scrollbar-subtle max-h-[32rem] overflow-y-auto">
       <Table>
         <TableHeader>
           <TableRow>
