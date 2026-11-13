@@ -11,11 +11,13 @@ import { cancelParsing, parseReplay, ReplayTimeout } from "@/lib/parser";
 import {
   loadMatches,
   loadTimedOut,
+  mergeMatches,
   saveMatches,
   saveTimedOut,
+  toMatches,
 } from "@/lib/saved-matches";
 import { summarize } from "@/lib/stats";
-import type { Issue, ReplayFile } from "@/types/match.types";
+import type { Issue, Match, ReplayFile } from "@/types/match.types";
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
@@ -38,6 +40,44 @@ function App() {
     saveTimedOut([]); // so replays that timed out get another try
     setMatches([]);
     setIssues([]);
+  };
+  const exportMatches = () => {
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(matches, null, 2)], { type: "application/json" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chest-counter-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const importMatches = async (file: File) => {
+    let incoming: Match[];
+    try {
+      const data: unknown = JSON.parse(await file.text());
+      incoming = Array.isArray(data) ? toMatches(data) : [];
+    } catch {
+      incoming = [];
+    }
+    if (incoming.length === 0) {
+      toast.add({
+        type: "warning",
+        title: "No matches found in that file",
+        description: "Pick a file saved with Export.",
+      });
+      return;
+    }
+    const all = mergeMatches(matches, incoming);
+    const added = all.length - matches.length;
+    saveMatches(all);
+    setMatches(all);
+    toast.add({
+      type: added > 0 ? "success" : "info",
+      title:
+        added > 0
+          ? `Imported ${formatCount(added, "match")}`
+          : "Every match in that file was already saved",
+    });
   };
   const cancelled = useRef(false);
   const cancel = () => {
@@ -158,6 +198,8 @@ function App() {
           includeSquad={includeSquad}
           busy={busy}
           onClear={clearSaved}
+          onExport={exportMatches}
+          onImport={importMatches}
         />
 
         {/* bottom padding keeps the last line clear of the pinned links on a narrow screen */}

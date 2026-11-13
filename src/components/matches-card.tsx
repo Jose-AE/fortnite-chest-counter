@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MatchesChart } from "@/components/matches-chart";
 import { MatchesTable } from "@/components/matches-table";
 import { Button } from "@/components/ui/button";
@@ -49,13 +49,18 @@ export function MatchesCard({
   includeSquad,
   busy,
   onClear,
+  onExport,
+  onImport,
 }: {
   matches: Match[];
   issues: Issue[];
   includeSquad: boolean;
   busy: boolean;
   onClear: () => void;
+  onExport: () => void;
+  onImport: (file: File) => void;
 }) {
+  const importInput = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<"chart" | "table">("chart");
   const [group, setGroup] = useState<ChartGroup>("match");
   const empty = matches.length === 0;
@@ -128,15 +133,45 @@ export function MatchesCard({
           </>
         )}
       </CardContent>
-      {!empty && (
-        <CardFooter className="justify-between gap-4 text-xs text-muted-foreground">
-          Saved in this browser, so your total keeps growing after Fortnite
-          deletes old replays.
-          <Button variant="ghost" size="sm" disabled={busy} onClick={onClear}>
-            Clear saved
+      {/* shown when empty too: importing is how a new browser gets its history back */}
+      <CardFooter className="flex-wrap justify-between gap-4 text-xs text-muted-foreground">
+        <span className="flex-1 basis-60">
+          {empty
+            ? "Moving from another browser? Import the file you exported there."
+            : "Saved in this browser, so your total keeps growing after Fortnite deletes old replays. Export a copy to keep it safe."}
+        </span>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={() => importInput.current?.click()}
+          >
+            Import
           </Button>
-        </CardFooter>
-      )}
+          {!empty && (
+            <>
+              <Button variant="ghost" size="sm" disabled={busy} onClick={onExport}>
+                Export
+              </Button>
+              <Button variant="ghost" size="sm" disabled={busy} onClick={onClear}>
+                Clear saved
+              </Button>
+            </>
+          )}
+        </div>
+        <input
+          ref={importInput}
+          type="file"
+          accept=".json,application/json"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = ""; // so picking the same file again still fires
+            if (file) onImport(file);
+          }}
+        />
+      </CardFooter>
     </Card>
   );
 }

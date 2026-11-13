@@ -18,7 +18,7 @@ With teammate chests included, the total, the token chance and the chart all add
 2. Press **Choose folder** and pick `%LOCALAPPDATA%\FortniteGame\Saved\Demos`, or drop replay files onto the page.
 3. Press **Count chests**.
 
-Counted matches are saved in your browser, so the total keeps growing after Fortnite deletes old replays (it keeps about the newest 100). Come back, pick the folder again, and only the new matches are read.
+Counted matches are saved in your browser, so the total keeps growing after Fortnite deletes old replays (it keeps about the newest 100). Come back, pick the folder again, and only the new matches are read. Press **Export** to save them to a `.json` file, and **Import** to load that file in another browser or after clearing your browser data.
 
 ## What the numbers mean
 
