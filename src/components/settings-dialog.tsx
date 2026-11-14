@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { formatNumber } from "@/lib/format";
 import { DEFAULT_SETTINGS } from "@/lib/settings";
@@ -32,6 +33,7 @@ export function SettingsDialog({
   const [open, setOpen] = useState(false);
   const [odds, setOdds] = useState("");
   const [extra, setExtra] = useState("");
+  const [recount, setRecount] = useState(false);
   const oddsValue = parseWhole(odds, 1);
   const extraValue = extra.trim() === "" ? 0 : parseWhole(extra, 0); // cleared field means none
 
@@ -40,6 +42,7 @@ export function SettingsDialog({
       // start from the saved values each time, so a cancelled edit is forgotten
       setOdds(String(settings.tokenOdds));
       setExtra(String(settings.extraChests));
+      setRecount(settings.recount);
     }
     setOpen(next);
   };
@@ -47,7 +50,7 @@ export function SettingsDialog({
     e.preventDefault();
     if (oddsValue === null || extraValue === null) return;
     // spread first: the dialog does not edit every setting (includeSquad is the Hero's checkbox)
-    onChange({ ...settings, tokenOdds: oddsValue, extraChests: extraValue });
+    onChange({ ...settings, tokenOdds: oddsValue, extraChests: extraValue, recount });
     setOpen(false);
   };
 
@@ -104,6 +107,18 @@ export function SettingsDialog({
             <span className="text-muted-foreground">
               From games you have no replay of. Added to the total and the
               token chance, not to the chart or the averages.
+            </span>
+          </label>
+
+          <label className="grid cursor-pointer gap-1.5">
+            <span className="flex items-center gap-2 font-medium">
+              <Checkbox checked={recount} onCheckedChange={setRecount} />
+              Replace saved matches
+            </span>
+            <span className="text-muted-foreground">
+              Count replays again even if they&apos;re already saved, and
+              replace the old numbers. Use this after an update fixes the
+              count.
             </span>
           </label>
 

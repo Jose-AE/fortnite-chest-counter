@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tokenOdds: TOKEN_ODDS,
   extraChests: 0,
   includeSquad: false,
+  recount: false,
 };
 
 const isWhole = (n: unknown, min: number): n is number =>
@@ -15,11 +16,12 @@ const isWhole = (n: unknown, min: number): n is number =>
 
 // Settings from storage or an imported file; a missing or bad field falls back to its default.
 export const toSettings = (s: unknown): Settings => {
-  const { tokenOdds, extraChests, includeSquad } = (s ?? {}) as Partial<Settings>;
+  const { tokenOdds, extraChests, includeSquad, recount } = (s ?? {}) as Partial<Settings>;
   return {
     tokenOdds: isWhole(tokenOdds, 1) ? tokenOdds : DEFAULT_SETTINGS.tokenOdds,
     extraChests: isWhole(extraChests, 0) ? extraChests : 0,
     includeSquad: includeSquad === true,
+    recount: recount === true,
   };
 };
 

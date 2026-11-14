@@ -96,11 +96,13 @@ function App() {
     let omitted = 0; // already counted: left out of the table, reported in one toast at the end
     const timedOut = loadTimedOut();
     let slow = 0; // timed out on an earlier count: not tried again, also reported in a toast
+    let recounted = 0; // saved matches replaced with fresh numbers, with the recount setting on
+    const recount = settings.recount;
     const sameFile = (file: File) => (f: ReplayFile) =>
       f.fileName === file.name && f.fileSize === file.size;
-    // same name and size as a saved match: already scanned, no need to parse it again
+    // same name and size as a saved match: already scanned, no need to parse it again (unless recounting)
     const skip = (file: File) =>
-      all.some(sameFile(file)) || timedOut.some(sameFile(file));
+      !recount && (all.some(sameFile(file)) || timedOut.some(sameFile(file)));
     // Parse up to PARALLEL replays ahead, but handle the results in file order, so the bookkeeping below stays sequential.
     const parsing: Promise<Match | Error | null>[] = [];
     const start = (i: number) => {
@@ -113,13 +115,13 @@ function App() {
     };
     for (let i = 0; i < PARALLEL; i++) start(i);
     for (const [i, file] of files.entries()) {
-      const knownSlow = timedOut.some(sameFile(file));
+      const knownSlow = !recount && timedOut.some(sameFile(file));
       const result = await parsing[i];
       if (cancelled.current) break;
       start(i + PARALLEL);
       if (knownSlow) slow++;
       else if (result instanceof Error) {
-        if (result instanceof ReplayTimeout) {
+        if (result instanceof ReplayTimeout && !timedOut.some(sameFile(file))) {
           timedOut.push({ fileName: file.name, fileSize: file.size });
           saveTimedOut(timedOut);
         }
@@ -127,15 +129,23 @@ function App() {
           fileName: file.name,
           message: result.message.split("\n")[0],
         });
-      } else if (
-        result === null ||
-        (result.matchId && all.some((m) => m.matchId === result.matchId))
-      )
-        omitted++;
+      } else if (result === null) omitted++;
       else {
-        all.push(result);
-        saveMatches(all); // save as we go, so a cancel or a closed tab keeps what was counted
-        setMatches([...all]);
+        // the saved match for this replay: the same file, or the same match from another copy of it
+        const old = all.findIndex(
+          (m) =>
+            sameFile(file)(m) ||
+            (!!result.matchId && m.matchId === result.matchId),
+        );
+        if (old >= 0 && !recount) omitted++;
+        else {
+          if (old >= 0) {
+            all[old] = result;
+            recounted++;
+          } else all.push(result);
+          saveMatches(all); // save as we go, so a cancel or a closed tab keeps what was counted
+          setMatches([...all]);
+        }
       }
       setIssues([...notes]);
       setProgress(++handled);
@@ -149,6 +159,12 @@ function App() {
           omitted === 1
             ? "1 replay was omitted as it was already counted"
             : `${omitted} replays were omitted as they were already counted`,
+      });
+    if (recounted > 0)
+      toast.add({
+        type: "success",
+        title: `Recounted ${formatCount(recounted, "replay")}`,
+        description: "Turn off Replace saved matches in Settings when you are done.",
       });
     if (slow > 0)
       toast.add({
