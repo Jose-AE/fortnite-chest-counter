@@ -5,6 +5,8 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fortnite Chest Counter</title>
+    <!-- Google Search Console ownership check: removing it loses access to the Search Console data. -->
+    <meta name="google-site-verification" content="eDGGFenYRmPyrs640GC87gECB6eV1zqSD24xre3X4ps" />
     <meta
       name="description"
       content="Count every chest you opened in Fortnite, straight from your replay files, and see your shop token chance. Free, runs in your browser, nothing is uploaded."
@@ -12,6 +14,16 @@
     <!-- Link previews (Discord, X, WhatsApp...). They need a full image URL: vite.config.ts fills in %SITE_URL% from Vercel's domain on deploy; it is empty in local builds. -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Fortnite Chest Counter" />
+    <meta property="og:site_name" content="Fortnite Chest Counter" />
+    <!-- The site name Google shows above the result; without it Google names the vercel.app domain ("Vercel"). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Fortnite Chest Counter",
+        "url": "https://fortnite-chest-counter.vercel.app/"
+      }
+    </script>
     <meta
       property="og:description"
       content="Count every chest you opened in Fortnite, straight from your replay files, and see your shop token chance."
