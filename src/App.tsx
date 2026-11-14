@@ -9,7 +9,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { downloadBackup, readBackup } from "@/lib/backup";
 import { formatCount } from "@/lib/format";
-import { cancelParsing, parseReplay, ReplayTimeout } from "@/lib/parser";
+import {
+  cancelParsing,
+  PARALLEL,
+  parseReplay,
+  ReplayTimeout,
+} from "@/lib/parser";
 import {
   loadMatches,
   loadTimedOut,
@@ -19,7 +24,7 @@ import {
 } from "@/lib/saved-matches";
 import { loadSettings, saveSettings } from "@/lib/settings";
 import { summarize } from "@/lib/stats";
-import type { Issue, ReplayFile } from "@/types/match.types";
+import type { Issue, Match, ReplayFile } from "@/types/match.types";
 import type { Settings } from "@/types/settings.types";
 
 function App() {
@@ -91,19 +96,27 @@ function App() {
     let omitted = 0; // already counted: left out of the table, reported in one toast at the end
     const timedOut = loadTimedOut();
     let slow = 0; // timed out on an earlier count: not tried again, also reported in a toast
-    for (const file of files) {
-      const sameFile = (f: ReplayFile) =>
-        f.fileName === file.name && f.fileSize === file.size;
-      // same name and size as a saved match: already scanned, no need to parse it again
-      const known = all.some(sameFile);
-      const knownSlow = timedOut.some(sameFile);
-      const result =
-        known || knownSlow
-          ? null
-          : await parseReplay(file).catch((e) =>
+    const sameFile = (file: File) => (f: ReplayFile) =>
+      f.fileName === file.name && f.fileSize === file.size;
+    // same name and size as a saved match: already scanned, no need to parse it again
+    const skip = (file: File) =>
+      all.some(sameFile(file)) || timedOut.some(sameFile(file));
+    // Parse up to PARALLEL replays ahead, but handle the results in file order, so the bookkeeping below stays sequential.
+    const parsing: Promise<Match | Error | null>[] = [];
+    const start = (i: number) => {
+      if (i < files.length)
+        parsing[i] = skip(files[i])
+          ? Promise.resolve(null)
+          : parseReplay(files[i]).catch((e) =>
               e instanceof Error ? e : new Error(String(e)),
             );
+    };
+    for (let i = 0; i < PARALLEL; i++) start(i);
+    for (const [i, file] of files.entries()) {
+      const knownSlow = timedOut.some(sameFile(file));
+      const result = await parsing[i];
       if (cancelled.current) break;
+      start(i + PARALLEL);
       if (knownSlow) slow++;
       else if (result instanceof Error) {
         if (result instanceof ReplayTimeout) {
@@ -154,7 +167,7 @@ function App() {
     <div className="relative min-h-svh overflow-hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,--theme(--color-foreground/4%)_1px,transparent_1px),linear-gradient(to_bottom,--theme(--color-foreground/4%)_1px,transparent_1px)] bg-[size:3rem_3rem]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,--theme(--color-foreground/4%)_1px,transparent_1px),linear-gradient(to_bottom,--theme(--color-foreground/4%)_1px,transparent_1px)] bg-size-[3rem_3rem]"
       />
 
       <main className="relative mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 lg:py-14">
@@ -205,9 +218,9 @@ function App() {
 
         {/* bottom padding keeps the last line clear of the pinned links on a narrow screen */}
         <footer className="pt-2 pb-8 text-center text-xs text-muted-foreground">
-          Fortnite Chest Counter is a fan-made tool. It is not affiliated with, endorsed
-          or sponsored by Epic Games. Fortnite is a trademark of Epic Games,
-          Inc.
+          Fortnite Chest Counter is a fan-made tool. It is not affiliated with,
+          endorsed or sponsored by Epic Games. Fortnite is a trademark of Epic
+          Games, Inc.
         </footer>
       </main>
 

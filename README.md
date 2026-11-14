@@ -47,7 +47,7 @@ The replay reader is C# ([`wasm/`](wasm/), using the [FortniteReplayReader](http
 
 ## Running it locally
 
-You need Node.js and the [.NET 10 SDK](https://dotnet.microsoft.com/download).
+You need Node.js, the [.NET 10 SDK](https://dotnet.microsoft.com/download) and its WebAssembly tools (`dotnet workload install wasm-tools`, run as admin on Windows).
 
 ```
 npm install

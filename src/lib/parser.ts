@@ -17,12 +17,20 @@ const readable = (raw: string) =>
         ? "Could not load the replay reader. Check your connection and reload the page."
         : "Could not read this replay. It may be damaged or from a Fortnite version that is not supported yet.";
 
-let stop: ((reason: Error) => void) | undefined;
+// How many replays to parse at once. Each runs its own .NET runtime, so this costs memory, and on a small CPU
+// parallel parses slow each other toward LIMIT_MS: half the cores, at most 4.
+export const PARALLEL = Math.max(
+  1,
+  Math.min(4, Math.floor((navigator.hardwareConcurrency || 2) / 2)),
+);
 
-// Gives up on the replay being parsed right now, if there is one.
-export const cancelParsing = () => stop?.(new Error("Cancelled"));
+const stops = new Set<(reason: Error) => void>();
 
-// Parses one replay in a Web Worker. Call it for one file at a time.
+// Gives up on every replay being parsed right now.
+export const cancelParsing = () =>
+  stops.forEach((stop) => stop(new Error("Cancelled")));
+
+// Parses one replay in its own Web Worker. Several can run at once.
 export function parseReplay(file: File): Promise<Match> {
   if (file.size === 0) return Promise.reject(new Error("Empty file"));
   // A fresh worker per replay: the .NET runtime's memory only grows, and one worker ran out after about 30 replays and then failed every file after that.
@@ -32,16 +40,17 @@ export function parseReplay(file: File): Promise<Match> {
   return new Promise((resolve, reject) => {
     const finish = () => {
       clearTimeout(timer);
-      stop = undefined;
+      stops.delete(stop);
       worker.terminate(); // also the only way to interrupt a parser that is stuck
     };
-    stop = (reason) => {
+    const stop = (reason: Error) => {
       finish();
       reject(reason);
     };
+    stops.add(stop);
     const timer = setTimeout(
       () =>
-        stop?.(
+        stop(
           new ReplayTimeout(`Skipped: took over ${LIMIT_MS / 1000} seconds`),
         ),
       LIMIT_MS,
@@ -56,7 +65,7 @@ export function parseReplay(file: File): Promise<Match> {
     };
     worker.onerror = (e) => {
       console.warn(`${file.name}: ${e.message}`);
-      stop?.(new Error(readable(e.message || "")));
+      stop(new Error(readable(e.message || "")));
     };
     worker.postMessage(file);
   });

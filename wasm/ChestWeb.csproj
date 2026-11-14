@@ -5,6 +5,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <!-- Compile to native WebAssembly instead of running in the .NET interpreter: several times faster per replay. Needs `dotnet workload install wasm-tools`. -->
+    <RunAOTCompilation>true</RunAOTCompilation>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FortniteReplayReader" Version="3.1.0" />
