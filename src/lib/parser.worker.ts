@@ -1,7 +1,11 @@
 // Runs the .NET chest counter off the main thread. Gets one File per message, answers { match } or { error }.
 const loadApi = async (): Promise<{ Count(bytes: Uint8Array): string }> => {
   // `npm run build:wasm` puts the .NET runtime in public/_framework. A URL built at run time keeps Vite from rewriting the import.
-  const url = new URL("/_framework/dotnet.js", location.href).href;
+  // ?v= busts the long cache vercel.json sets (see vite.config.ts).
+  const url = new URL(
+    `/_framework/dotnet.js?v=${import.meta.env.VITE_DOTNET_HASH}`,
+    location.href,
+  ).href;
   const { dotnet } = await import(/* @vite-ignore */ url);
   const { getAssemblyExports, getConfig, runMain } = await dotnet.create();
   const exports = await getAssemblyExports(getConfig().mainAssemblyName);
