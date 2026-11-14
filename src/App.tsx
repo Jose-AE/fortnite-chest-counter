@@ -5,6 +5,7 @@ import { ProgressDialog } from "@/components/progress-dialog";
 import { ReplayPicker } from "@/components/replay-picker";
 import { Hero } from "@/components/hero";
 import { StatTiles } from "@/components/stat-tiles";
+import { UpdateDialog } from "@/components/update-dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { downloadBackup, readBackup } from "@/lib/backup";
@@ -242,6 +243,7 @@ function App() {
 
       <Links />
 
+      <UpdateDialog hasMatches={matches.length > 0} />
       <ProgressDialog
         open={busy}
         files={files}
