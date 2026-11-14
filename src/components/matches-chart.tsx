@@ -3,10 +3,15 @@ import { formatNumber } from "@/lib/format";
 import type { ChartBar, ChartGroup } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 
-// 37 -> 50, 103 -> 200: an axis top that is a clean number
-const niceCeil = (value: number) => {
+// 37 -> 40, 114 -> 150: an axis top that is a clean number close above the tallest bar, so the bars fill the plot.
+// Even only, so the middle label (top / 2) is a whole number of chests.
+const niceCeil =(value: number) => {
   const step = 10 ** Math.floor(Math.log10(value));
-  return [1, 2, 5, 10].map((m) => m * step).find((top) => top >= value) ?? value;
+  return (
+    [1, 1.5, 2, 3, 4, 5, 6, 8, 10]
+      .map((m) => m * step)
+      .find((top) => top >= value && top % 2 === 0) ?? value
+  );
 };
 
 // One column per match or per day, oldest to newest, with a line at the average. Squad chests stack on top when included.
@@ -51,7 +56,7 @@ export function MatchesChart({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-4 text-xs text-muted-foreground">
+        <div className="flex gap-4 text-sm text-muted-foreground">
           {includeSquad && (
             <>
               <span className="flex items-center gap-1.5">
@@ -68,7 +73,7 @@ export function MatchesChart({
 
       <div className="flex gap-2">
         {/* y axis: 0, half, top */}
-        <div className="relative mb-5 w-10 shrink-0 text-right text-[11px] text-muted-foreground tabular-nums">
+        <div className="relative mb-5 w-10 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
           {[0, 0.5, 1].map((at) => (
             <span
               key={at}
@@ -139,7 +144,7 @@ export function MatchesChart({
                 {labelled.has(i) && (
                   <span
                     className={cn(
-                      "absolute bottom-0 text-[11px] leading-5 whitespace-nowrap text-muted-foreground",
+                      "absolute bottom-0 text-xs leading-5 whitespace-nowrap text-muted-foreground",
                       // a day column is wide, so its label sits under the bar; a match column is thin, so the label starts at it
                       group === "day" ? "left-1/2 -translate-x-1/2" : "left-0",
                     )}
@@ -155,7 +160,7 @@ export function MatchesChart({
 
       {active && (
         <div
-          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full border bg-popover px-3 py-2 text-xs whitespace-nowrap shadow-lg"
+          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-md border bg-popover px-3 py-2 text-xs whitespace-nowrap shadow-lg"
           style={{
             left: Math.min(Math.max(tip.x, 120), window.innerWidth - 120),
             top: tip.y - 8,

@@ -165,7 +165,8 @@ function App() {
       toast.add({
         type: "success",
         title: `Recounted ${formatCount(recounted, "replay")}`,
-        description: "Turn off Replace saved matches in Settings when you are done.",
+        description:
+          "Turn off Replace saved matches in Settings when you are done.",
       });
     if (slow > 0)
       toast.add({
@@ -181,14 +182,35 @@ function App() {
   const summary = summarize(matches, includeSquad, settings.extraChests);
 
   return (
-    <div className="relative min-h-svh overflow-hidden">
+    <div className="relative min-h-svh">
+      {/* faint 3rem grid at the top of the page, so it is not one flat grey. It fades out down the page, so it reads as a backdrop for the headline, not graph paper behind the chart */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,--theme(--color-foreground/4%)_1px,transparent_1px),linear-gradient(to_bottom,--theme(--color-foreground/4%)_1px,transparent_1px)] bg-size-[3rem_3rem]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,--theme(--color-foreground/4%)_1px,transparent_1px),linear-gradient(to_bottom,--theme(--color-foreground/4%)_1px,transparent_1px)] bg-size-[3rem_3rem] [mask-image:linear-gradient(to_bottom,black_0,black_400px,transparent_1100px)]"
       />
+      {/* a soft gold glow behind the chest total, so the number looks lit. Centred on a phone, where the hero is centred; on a wide screen it follows the number, 18rem left of the page centre */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_700px_450px_at_50%_220px,--theme(--color-primary/11%),transparent_70%)] lg:bg-[radial-gradient(ellipse_700px_450px_at_calc(50%-18rem)_220px,--theme(--color-primary/11%),transparent_70%)]"
+      />
+      {/* slim top bar with the name and the author links, like a fan site header */}
+      <header className="sticky top-0 z-30 border-b border-black/40 bg-[#26282c]/95 backdrop-blur">
+        <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-4">
+          <a href="/" className="flex items-center gap-2">
+            <img src="/favicon.png" alt="" className="size-7" />
+            {/* the page title lives here, so the headline below can be the number */}
+            <h1 className="font-heading text-base font-semibold tracking-tight whitespace-nowrap uppercase sm:text-xl">
+              Fortnite Chest Counter
+            </h1>
+          </a>
+          <Links />
+        </div>
+      </header>
 
-      <main className="relative mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 lg:py-14">
-        <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+      {/* one content width, so the tiles and the chart share both edges */}
+      <main className="relative mx-auto flex max-w-5xl flex-col gap-4 px-4 pt-10 pb-10 lg:pt-12">
+        {/* side by side on a wide screen: the title and totals on the left, the replays on the right */}
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-8 pb-4 lg:grid-cols-[minmax(0,1fr)_31rem]">
           <Hero
             summary={summary}
             failed={issues.length}
@@ -199,8 +221,8 @@ function App() {
             settings={settings}
             onSettings={updateSettings}
           />
-          {/* first on a phone, where adding replays is the first thing to do */}
-          <section className="order-first flex flex-col gap-4 lg:order-last">
+          {/* drop zone with the one yellow button under it, like a search box. The row stretches both columns to one height, so the drop zone fills what the list and button leave */}
+          <section className="mx-auto flex w-full max-w-lg flex-col gap-2.5">
             <ReplayPicker
               files={files}
               disabled={busy}
@@ -209,15 +231,17 @@ function App() {
                 updateFiles(files.filter((_, i) => i !== index))
               }
             />
-            <Button
-              size="lg"
-              className="h-12 text-base font-bold tracking-wide uppercase"
-              disabled={files.length === 0 || busy}
-              onClick={countChests}
-            >
-              Count chests
-              {files.length > 0 && ` in ${formatCount(files.length, "replay")}`}
-            </Button>
+            {/* only once there is something to count, so an empty picker has no dead grey block; disabled while counting is plain grey, not a faded yellow */}
+            {files.length > 0 && (
+              <Button
+                size="lg"
+                className="h-11 font-heading text-base font-black uppercase sm:text-lg shadow-[inset_0_-3px_0_rgb(0_0_0/15%)] disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none"
+                disabled={busy}
+                onClick={countChests}
+              >
+                Count chests in {formatCount(files.length, "replay")}
+              </Button>
+            )}
           </section>
         </div>
 
@@ -233,15 +257,12 @@ function App() {
           onImport={importMatches}
         />
 
-        {/* bottom padding keeps the last line clear of the pinned links on a narrow screen */}
         <footer className="pt-2 pb-8 text-center text-xs text-muted-foreground">
           Fortnite Chest Counter is a fan-made tool. It is not affiliated with,
           endorsed or sponsored by Epic Games. Fortnite is a trademark of Epic
           Games, Inc.
         </footer>
       </main>
-
-      <Links />
 
       <UpdateDialog hasMatches={matches.length > 0} />
       <ProgressDialog

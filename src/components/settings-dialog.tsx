@@ -71,7 +71,7 @@ export function SettingsDialog({
           </DialogHeader>
 
           <label className="grid gap-1.5">
-            <span className="font-medium">Shop token odds</span>
+            <span className="font-bold">Shop token odds</span>
             <span className="flex items-center gap-2">
               {/* shrink-0: next to a full-width input the label would otherwise wrap to "1 / in" */}
               <span className="shrink-0 whitespace-nowrap">1 in</span>
@@ -97,7 +97,7 @@ export function SettingsDialog({
           </label>
 
           <label className="grid gap-1.5">
-            <span className="font-medium">Chests not in replays</span>
+            <span className="font-bold">Chests not in replays</span>
             <Input
               inputMode="numeric"
               value={extra}
@@ -111,7 +111,7 @@ export function SettingsDialog({
           </label>
 
           <label className="grid cursor-pointer gap-1.5">
-            <span className="flex items-center gap-2 font-medium">
+            <span className="flex items-center gap-2 font-bold">
               <Checkbox checked={recount} onCheckedChange={setRecount} />
               Replace saved matches
             </span>

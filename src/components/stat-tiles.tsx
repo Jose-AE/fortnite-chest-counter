@@ -5,12 +5,7 @@ import {
   RiTeamLine,
   RiTrophyLine,
 } from "@remixicon/react";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import type { Summary } from "@/lib/stats";
 import { cn } from "@/lib/utils";
@@ -24,31 +19,37 @@ export function StatTiles({ summary }: { summary: Summary }) {
         summary.matchCount === 0 && "opacity-50",
       )}
     >
+      {/* colours follow the chart: warm orange is you (gold bars), blue is teammates (blue bars) */}
       <Tile
+        tint={["#d98a30", "#6a3a10"]}
         icon={RiKey2Line}
         label="By you"
         value={formatNumber(summary.byYou)}
         note={`${formatNumber(summary.opened)} opened · ${formatNumber(summary.broken)} broken`}
       />
       <Tile
+        tint={["#3a7fd9", "#173a70"]}
         icon={RiTeamLine}
         label="Teammate chests"
         value={formatNumber(summary.teammates)}
         note={`${formatNumber(summary.teamOpened)} opened · ${formatNumber(summary.teamBroken)} broken`}
       />
       <Tile
+        tint={["#45a565", "#1c4a2c"]}
         icon={RiStackLine}
         label="Per match"
         value={formatNumber(summary.perMatch)}
         note="average"
       />
       <Tile
+        tint={["#9447cf", "#3e1a60"]}
         icon={RiTrophyLine}
         label="Best match"
         value={formatNumber(summary.best?.count ?? 0)}
         note={summary.best ? formatDateTime(summary.best.date) : undefined}
       />
       <Tile
+        tint={["#d04a3e", "#6a1d1a"]}
         icon={RiSpeedUpLine}
         label="Per minute"
         value={formatNumber(summary.perMinute)}
@@ -59,29 +60,40 @@ export function StatTiles({ summary }: { summary: Summary }) {
   );
 }
 
+// One tile, built like an item card in the shop: the number and its label over a coloured block, a dark strip under it.
 function Tile({
   icon: Icon,
   label,
   value,
   note,
+  tint,
   className,
 }: {
   icon: typeof RiKey2Line;
   label: string;
   value: string;
   note?: string;
+  tint: [string, string]; // top and bottom of the coloured block
   className?: string;
 }) {
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardDescription className="flex items-center gap-2">
-          <Icon className="size-4 text-primary" />
+    <Card className={cn("gap-0 py-0 ring-0", className)}>
+      <div
+        className="relative flex h-28 flex-col justify-end overflow-hidden px-3 pb-2.5"
+        style={{ background: `linear-gradient(to bottom, ${tint[0]}, ${tint[1]})` }}
+      >
+        {/* the icon large and faint in the corner, where an item picture would be */}
+        <Icon className="absolute -top-2 -right-2 size-24 text-white/18" />
+        <span className="relative font-heading text-3xl leading-none font-black tabular-nums [text-shadow:0_2px_0_rgb(0_0_0/35%)]">
+          {value}
+        </span>
+        <span className="relative font-heading text-sm leading-tight font-black tracking-wide uppercase [text-shadow:0_2px_0_rgb(0_0_0/35%)]">
           {label}
-        </CardDescription>
-        <CardTitle className="text-4xl font-black">{value}</CardTitle>
-        <CardDescription className="min-h-5">{note}</CardDescription>
-      </CardHeader>
+        </span>
+      </div>
+      <div className="flex min-h-9 items-center bg-[#1b1c1f] px-3 text-xs font-semibold text-white/75">
+        {note}
+      </div>
     </Card>
   );
 }

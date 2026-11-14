@@ -13,12 +13,12 @@ const LINKS = [
   },
 ];
 
-// The author's links, pinned to the bottom right corner of the page.
+// The author's links, at the right end of the top bar.
 export function Links() {
   return (
     <nav
       aria-label="Author links"
-      className="fixed right-0 bottom-0 z-30 m-2 flex gap-1 bg-card/80 p-1 ring-1 ring-foreground/10 backdrop-blur"
+      className="flex gap-1"
     >
       {LINKS.map(({ label, href, icon: Icon }) => (
         <a
@@ -28,7 +28,7 @@ export function Links() {
           rel="noreferrer"
           aria-label={label}
           title={label}
-          className="p-1.5 text-muted-foreground transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline-none"
+          className="rounded-md p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:text-primary focus-visible:outline-none"
         >
           <Icon className="size-5" />
         </a>

@@ -11,7 +11,7 @@ import {
 import { readJson, writeJson } from "@/lib/storage";
 
 // Change this, and the text below, to show the dialog again for the next update.
-const UPDATE = "2026-11-13-chest-fix";
+const UPDATE = "2026-11-14-new-look";
 const SEEN_KEY = "chest-counter:seen-update";
 
 // Shown once per update, only to people with saved matches: their numbers came from the older counter.
@@ -34,13 +34,17 @@ export function UpdateDialog({ hasMatches }: { hasMatches: boolean }) {
         </DialogHeader>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
           <li>
-            <b className="text-foreground">More accurate counts.</b> Fixed a
-            bug that counted some chests twice, so your saved numbers may be a
-            bit high.
+            <b className="text-foreground">A brand new look.</b> Bolder,
+            brighter and friendlier.
           </li>
           <li>
-            <b className="text-foreground">About 10x faster.</b> Replays scan
-            several at a time.
+            <b className="text-foreground">More accurate counts.</b> Fixed some
+            bugs that sometimes counted more chests than you actually opened, so
+            your saved numbers may be a bit high.
+          </li>
+          <li>
+            <b className="text-foreground">Counting is about 10x faster.</b>{" "}
+            Several replays are read at once, with a faster replay reader.
           </li>
           <li>
             <b className="text-foreground">Replace saved matches.</b> A new

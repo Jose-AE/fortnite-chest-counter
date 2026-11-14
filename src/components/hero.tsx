@@ -1,15 +1,6 @@
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -25,9 +16,45 @@ import { chestsForEvenChance, tokenChance, type Summary } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 import type { Settings } from "@/types/settings.types";
 
-// Before anything is counted the total is a real 0, shown dimmed so it reads as "nothing yet".
+// A filter pill with a count badge; the chosen one is white.
+function Pill({
+  on,
+  count,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  count?: number;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={cn(
+        "flex h-9 items-center gap-1.5 rounded-sm px-2 font-heading text-sm whitespace-nowrap sm:gap-2 sm:px-3 sm:text-base font-extrabold tracking-wide uppercase transition-colors",
+        on ? "bg-white text-black shadow-sm" : "text-white/70 hover:text-white",
+      )}
+    >
+      {children}
+      {count !== undefined && (
+        <span
+          className={cn(
+            "rounded px-1.5 py-0.5 font-sans text-[11px] leading-none font-bold tabular-nums",
+            on ? "bg-black/12" : "bg-black/30",
+          )}
+        >
+          {formatNumber(count)}
+        </span>
+      )}
+    </button>
+  );
+}
 
-// The one big number, and the switch that decides whether teammates' chests are part of it.
+// The page title, the totals line under it and the you / with-teammates switch.
+// Before anything is counted the total is a real 0, shown dimmed so it reads as "nothing yet".
 export function Hero({
   summary,
   failed,
@@ -48,131 +75,157 @@ export function Hero({
   const from = formatDay(summary.from);
   const to = formatDay(summary.to);
   const total = formatNumber(summary.total);
-  const commas = total.split(",").length - 1;
-  const digits = total.length - commas;
   const odds = settings.tokenOdds;
   const chance = tokenChance(summary.total, odds);
   const oddsChanged = odds !== DEFAULT_SETTINGS.tokenOdds;
+  const hasChips = counted && (oddsChanged || summary.extraChests > 0 || failed > 0);
 
   return (
-    <Card className="justify-between">
-      <CardHeader>
-        <CardDescription className="tracking-widest uppercase">
-          Total chests
-        </CardDescription>
-        <CardAction className="flex items-center gap-3">
+    // the chips already part the sentence from the switch, so with them the switch sits closer
+    <div
+      className={cn(
+        "@container flex flex-col items-center text-center lg:items-start lg:text-left",
+        hasChips ? "gap-4" : "gap-7",
+      )}
+    >
+      {/* the number is the headline: what the page is for */}
+      <div className="flex flex-col gap-3 font-heading uppercase">
+        <p className="text-lg leading-none font-extrabold tracking-wide text-white/60">
+          {summary.matchCount > 0
+            ? `${from === to ? from : `${from} to ${to}`} · ${formatCount(summary.matchCount, "match")}`
+            : "Add your replays to start"}
+        </p>
+        <p className="flex flex-wrap items-baseline justify-center gap-x-4 lg:justify-start">
+          <span
+            key={String(counted)}
+            className={cn(
+              // black italic (900), with a shadow down and to the right; pr-2 keeps the slanted last digit from touching "Chests"
+              "animate-in pr-2 [--size:6rem] leading-[0.85] font-black  italic text-primary mb-4 [text-shadow:4px_5px_0_rgb(0_0_0/45%)] duration-500 fade-in slide-in-from-bottom-2 lg:[--size:10rem]",
+              !counted && "opacity-40",
+            )}
+            // full size while it fits; a longer number shrinks to the hero's width (cqw). Each character measures about 0.53em in this face; 0.66 leaves room for the italic overhang and a gap before the replay picker
+            style={{
+              fontSize: `min(var(--size), ${(100 / (total.length * 0.66)).toFixed(2)}cqw)`,
+            }}
+          >
+            {total}
+          </span>
+          <span className="text-4xl leading-none font-black [text-shadow:0_3px_0_rgb(0_0_0/35%)] sm:text-5xl">
+            {/* the same word in both modes, so switching only changes the number; the pill shows which mode is on */}
+            Chests
+          </span>
+        </p>
+        {counted && (
+          <p className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-2.5 text-lg font-extrabold text-white/55 sm:text-xl lg:justify-start">
+            <Tooltip>
+              {/* a button, so the explanation also opens on keyboard focus */}
+              <TooltipTrigger
+                delay={100}
+                className="cursor-help font-black text-white tabular-nums underline decoration-white/30 decoration-dotted decoration-1 underline-offset-[5px]"
+              >
+                {formatPercent(chance)}
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                className="block max-w-sm space-y-2 py-3 text-left font-sans text-xs/relaxed normal-case"
+              >
+                <p>
+                  <strong>Every chest is its own roll.</strong> Each one has a 1
+                  in {formatNumber(odds)} chance, and chests do not add up
+                  towards a guaranteed token.
+                </p>
+                <p>
+                  The chance that none of your {total} chests dropped one is (
+                  {formatNumber(odds - 1)} ÷ {formatNumber(odds)}) multiplied by
+                  itself {total} times, which is {formatPercent(1 - chance)}. So
+                  the chance that at least one did is 100% −{" "}
+                  {formatPercent(1 - chance)} ={" "}
+                  <strong>{formatPercent(chance)}</strong>.
+                </p>
+                <p>
+                  After {formatNumber(odds)} chests the chance is{" "}
+                  {formatPercent(tokenChance(odds, odds))}, not 100%. A 50%
+                  chance takes about {formatNumber(chestsForEvenChance(odds))}{" "}
+                  chests.
+                </p>
+                {includeSquad && (
+                  <p>
+                    Teammate chests are only counted when they were opened near
+                    you, so your real chance is a little higher.
+                  </p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+            <span>chance one dropped a shop token</span>
+            {/* a chip of its own, so it wraps as one piece instead of pushing the sentence onto two ragged lines */}
+            {/* the notes that adjust the number sit together under it, as chips: no extra row under the switch to throw off the layout */}
+            {hasChips && (
+              <span className="flex basis-full flex-wrap justify-center gap-2 lg:justify-start">
+                {oddsChanged && (
+                  // purple, so a changed setting reads apart from the gold "by hand" chip, which changes the count itself
+                  <span className="rounded border border-[#a58df5]/40 bg-[#a58df5]/10 px-1.5 py-0.5 text-xs leading-none whitespace-nowrap text-[#a58df5]">
+                    Custom odds
+                  </span>
+                )}
+                {summary.extraChests > 0 && (
+                  <span
+                    title={`Includes ${formatCount(summary.extraChests, "chest")} added by hand`}
+                    className="rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-xs leading-none whitespace-nowrap text-primary"
+                  >
+                    +{formatNumber(summary.extraChests)} by hand
+                  </span>
+                )}
+                {failed > 0 && (
+                  <Badge variant="destructive">{failed} not counted</Badge>
+                )}
+              </span>
+            )}
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+        {/* one switch: both sides share a track, the white side is the one on */}
+        <div className="flex items-center gap-0.5 rounded-md border border-white/10 bg-black/30 p-1">
+          <Pill
+            on={!includeSquad}
+            count={summary.byYou}
+            onClick={() => onIncludeSquad(false)}
+          >
+            Just you
+          </Pill>
           <Tooltip>
-            {/* the label itself is the trigger: a button here would wrap the checkbox, which is already one */}
-            <TooltipTrigger
-              delay={100}
-              render={
-                <label className="flex cursor-pointer items-center gap-2 text-sm" />
-              }
-            >
-              <Checkbox
-                checked={includeSquad}
-                onCheckedChange={onIncludeSquad}
-              />
-              Include teammate chests
+            {/* a span as the trigger: the pill inside is already a button */}
+            <TooltipTrigger delay={100} render={<span className="flex" />}>
+              <Pill
+                on={includeSquad}
+                count={summary.byYou + summary.teammates}
+                onClick={() => onIncludeSquad(true)}
+              >
+                With teammates
+              </Pill>
             </TooltipTrigger>
             <TooltipContent
               side="bottom"
-              align="end"
               className="block max-w-xs py-2 text-left text-xs/relaxed"
             >
               Adds the chests your teammates opened. A replay only records what
-              happened near you, so chests they opened far away from you are
-              not counted. The real number is probably higher.
+              happened near you, so chests they opened far away from you are not
+              counted. The real number is probably higher.
             </TooltipContent>
           </Tooltip>
-          <SettingsDialog settings={settings} onChange={onSettings} />
-        </CardAction>
-      </CardHeader>
-      {/* The middle of three rows, so the card's justify-between centres it between the label and the footer line. */}
-      {/* Fixed second column and fixed wording: only the two numbers change when the checkbox is toggled, nothing moves. */}
-      <CardContent>
-        <div className="grid items-center gap-x-10 gap-y-4 md:grid-cols-[minmax(0,1fr)_20rem]">
-          {/* a container, so the number's size can follow this column's width (the cqw unit below) */}
-          <div className="@container min-w-0">
-            <CardTitle
-              key={String(counted)}
-              className={cn(
-                "animate-in leading-none font-black tracking-tighter whitespace-nowrap text-primary duration-500 fade-in slide-in-from-bottom-4",
-                !counted && "opacity-30",
-              )}
-              // Full size (8rem) while the number fits its column, smaller as it gains digits.
-              // A digit is about 0.62em wide in this font and a comma about 0.25em.
-              style={{
-                fontSize: `min(8rem, calc(100cqw / ${digits * 0.62 + commas * 0.25}))`,
-              }}
-            >
-              {total}
-            </CardTitle>
-          </div>
-          {counted && (
-            <div className="border-l-2 border-primary/40 pl-4">
-              <div className="text-xs tracking-widest text-muted-foreground uppercase">
-                Shop token chance
-              </div>
-              <Tooltip>
-                {/* a button, so the explanation also opens on keyboard focus */}
-                <TooltipTrigger
-                  delay={100}
-                  className="cursor-help text-5xl font-black tabular-nums underline decoration-muted-foreground/40 decoration-dotted decoration-2 underline-offset-8"
-                >
-                  {formatPercent(chance)}
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="block max-w-sm space-y-2 py-3 text-left text-xs/relaxed"
-                >
-                  <p>
-                    <strong>Every chest is its own roll.</strong> Each one has
-                    a 1 in {formatNumber(odds)} chance, and chests do not
-                    add up towards a guaranteed token.
-                  </p>
-                  <p>
-                    The chance that none of your {total} chests dropped one is
-                    ({formatNumber(odds - 1)} ÷ {formatNumber(odds)}
-                    ) multiplied by itself {total} times, which is{" "}
-                    {formatPercent(1 - chance)}. So the chance that at least
-                    one did is 100% − {formatPercent(1 - chance)} ={" "}
-                    <strong>{formatPercent(chance)}</strong>.
-                  </p>
-                  <p>
-                    After {formatNumber(odds)} chests the chance is{" "}
-                    {formatPercent(tokenChance(odds, odds))}, not 100%. A 50%
-                    chance takes about {formatNumber(chestsForEvenChance(odds))}{" "}
-                    chests.
-                  </p>
-                  {includeSquad && (
-                    <p>
-                      Teammate chests are only counted when they were opened
-                      near you, so your real chance is a little higher.
-                    </p>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-              <p className="mt-1 text-xs/relaxed text-muted-foreground">
-                The chance that at least one of these chests dropped a token, at
-                1 in {formatNumber(odds)}
-                {oddsChanged && " (custom odds)"} per chest.
-              </p>
-            </div>
-          )}
         </div>
-      </CardContent>
-      <CardContent className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        {summary.matchCount > 0 &&
-          `across ${formatCount(summary.matchCount, "match")}, ${from === to ? from : `${from} to ${to}`}`}
-        {summary.matchCount > 0 && summary.extraChests > 0 && ", "}
-        {summary.extraChests > 0 &&
-          `including ${formatCount(summary.extraChests, "chest")} added by hand`}
-        {!counted && "Add replays and press Count chests."}
-        {failed > 0 && (
+        <div className="grid size-[46px] place-items-center rounded-md border border-white/10 bg-black/30">
+          <SettingsDialog settings={settings} onChange={onSettings} />
+        </div>
+      </div>
+
+      {/* before anything is counted the chip row above is hidden, so a failed first count still shows here */}
+      {!counted && failed > 0 && (
+        <p className="flex justify-center lg:justify-start">
           <Badge variant="destructive">{failed} not counted</Badge>
-        )}
-      </CardContent>
-    </Card>
+        </p>
+      )}
+    </div>
   );
 }

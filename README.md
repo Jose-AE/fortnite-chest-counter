@@ -6,11 +6,11 @@ Counts the chests you opened in Fortnite by reading your replay files, and works
 
 Everything runs in your browser. Your replays are read on your own computer and are never uploaded.
 
-![The page after counting 99 matches: 3,603 chests, a 2.59% shop token chance, and a chart of chests per match](docs/screenshots/overview.png)
+![The page after counting 101 matches: 3,925 chests, a 2.81% shop token chance, a row of stat tiles and a chart of chests per match](docs/screenshots/overview.png)
 
 With teammate chests included, the total, the token chance and the chart all add them in:
 
-![The same page with teammate chests included: 7,194 chests and a 5.10% shop token chance](docs/screenshots/with-teammates.png)
+![The same page with teammate chests included: 6,752 chests, a 4.79% shop token chance, and teammate chests stacked in blue on the chart](docs/screenshots/with-teammates.png)
 
 ## Using it
 

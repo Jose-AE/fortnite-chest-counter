@@ -64,9 +64,6 @@ export function ReplayPicker({
     e.target.value = ""; // so picking the same files again still fires
   };
 
-  // With replays listed, the drop zone drops its icon and hints so the list fits in the height they took.
-  const compact = files.length > 0;
-
   return (
     <>
       <div
@@ -78,39 +75,45 @@ export function ReplayPicker({
             toast.add({ type: "error", title: "Could not read that drop" }),
           );
         }}
+        // empty: grows to fill the column beside the title (flex-1). With files: one compact row, so the list and button fit beside the title too
         className={cn(
-          "flex flex-col items-center gap-2 border-2 border-dashed border-primary/40 bg-primary/5 px-4 text-center",
-          compact ? "py-4" : "py-8",
+          "flex items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/30 bg-black/15 px-4 text-center transition-colors hover:border-white/50",
+          files.length > 0 ? "py-2.5" : "flex-1 flex-col py-5",
         )}
       >
-        {!compact && <RiUploadCloud2Line className="size-8 text-primary" />}
-        <span className="font-semibold">Drop replays or a folder here</span>
+        <RiUploadCloud2Line
+          className={cn("text-primary", files.length > 0 ? "size-5" : "size-9")}
+        />
+        {files.length === 0 && (
+          <span className="font-heading text-sm font-bold tracking-wide text-white/70 uppercase italic">
+            Drop replays or a folder here
+          </span>
+        )}
         <div className="flex flex-wrap justify-center gap-2">
           <Button
-            variant="outline"
+            variant="ghost"
+            className="bg-muted font-heading text-xs font-extrabold tracking-wide uppercase hover:bg-accent"
             disabled={disabled}
             onClick={() => fileInput.current?.click()}
           >
             Choose files
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
+            className="bg-muted font-heading text-xs font-extrabold tracking-wide uppercase hover:bg-accent"
             disabled={disabled}
             onClick={() => folderInput.current?.click()}
           >
             Choose folder
           </Button>
         </div>
-        {!compact && (
-          <>
-            <code className="mt-2 text-[11px] break-all text-muted-foreground">
+        {files.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            The files never leave your device. Replays are in
+            <code className="mt-1 block text-white/80">
               %LOCALAPPDATA%\FortniteGame\Saved\Demos
             </code>
-            <span className="text-xs text-muted-foreground">
-              Your browser may ask to "upload" a folder. The files stay on your
-              device.
-            </span>
-          </>
+          </p>
         )}
         <input
           ref={fileInput}
@@ -131,8 +134,9 @@ export function ReplayPicker({
       </div>
 
       {files.length > 0 && (
-        // fixed height on desktop: the space the hidden hints took, so the row beside it never changes height
-        <ul className="max-h-38 divide-y overflow-y-auto border bg-card text-sm scrollbar-subtle lg:h-38">
+        // beside the title (lg) the list fills whatever height the title leaves, at least 38: it sits absolutely in its box, so 100 files never make the column taller
+        <div className="relative lg:min-h-38 lg:flex-1">
+        <ul className="max-h-38 divide-y overflow-y-auto rounded-md border bg-black/30 text-sm scrollbar-subtle lg:absolute lg:inset-0 lg:max-h-none">
           {files.map((file, i) => (
             <li key={i} className="flex items-center gap-2 px-3 py-2">
               <span className="flex-1 truncate">{file.name}</span>
@@ -151,6 +155,7 @@ export function ReplayPicker({
             </li>
           ))}
         </ul>
+        </div>
       )}
     </>
   );

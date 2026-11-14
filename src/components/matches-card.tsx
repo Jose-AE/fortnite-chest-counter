@@ -1,3 +1,4 @@
+import { RiBarChartFill, RiTableLine } from "@remixicon/react";
 import { useRef, useState } from "react";
 import { MatchesChart } from "@/components/matches-chart";
 import { MatchesTable } from "@/components/matches-table";
@@ -31,7 +32,9 @@ function Choice<T extends string>({
         <Button
           key={option}
           size="sm"
+          // grey pills with the chosen one white, like a filter bar
           variant={value === option ? "secondary" : "ghost"}
+          className="h-8 px-3 font-heading text-sm font-extrabold tracking-wide uppercase not-aria-pressed:bg-muted"
           aria-pressed={value === option}
           onClick={() => onChange(option)}
         >
@@ -74,7 +77,9 @@ export function MatchesCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
+        {/* coloured title with an icon, like a leaderboard panel */}
+        <CardTitle className="flex items-center gap-2 text-xl font-black tracking-wide uppercase">
+          {showTable ? <RiTableLine className="size-6" /> : <RiBarChartFill className="size-6" />}
           {showTable ? "Matches" : `Chests per ${group}`}
         </CardTitle>
         <CardDescription>
@@ -134,11 +139,11 @@ export function MatchesCard({
         )}
       </CardContent>
       {/* shown when empty too: importing is how a new browser gets its history back */}
-      <CardFooter className="flex-wrap justify-between gap-4 text-xs text-muted-foreground">
+      <CardFooter className="flex-wrap justify-between gap-4 text-sm text-muted-foreground">
         <span className="flex-1 basis-60">
           {empty
             ? "Moving from another browser? Import the file you exported there."
-            : "Saved in this browser, so your total keeps growing after Fortnite deletes old replays. Export a copy to keep it safe."}
+            : "Saved in this browser, so your total survives Fortnite deleting old replays. Export a copy to be safe."}
         </span>
         <div className="flex gap-1">
           <Button
@@ -154,7 +159,7 @@ export function MatchesCard({
               <Button variant="ghost" size="sm" disabled={busy} onClick={onExport}>
                 Export
               </Button>
-              <Button variant="ghost" size="sm" disabled={busy} onClick={onClear}>
+              <Button variant="destructive" size="sm" disabled={busy} onClick={onClear}>
                 Clear saved
               </Button>
             </>
