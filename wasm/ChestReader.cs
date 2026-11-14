@@ -24,7 +24,8 @@ class ChestReader : FortniteReplayReader.ReplayReader
 {
     public readonly Dictionary<uint, Player> Players = new(); // by player-state actor id
     public readonly List<LootEvent> Events = new();
-    readonly Dictionary<uint, ChestState> chests = new();     // by container actor id, so one that re-replicates is not counted again
+    readonly Dictionary<string, ChestState> chests = new();   // by ChestKey, so a chest that reloads under a new actor id is not counted again
+    readonly Dictionary<uint, string> channelKey = new();
     readonly Dictionary<uint, uint> channelToActor = new(), pawnToState = new();
     readonly Dictionary<string, bool> isContainer = new();
     readonly HashSet<uint> freshChannels = new();
@@ -41,6 +42,7 @@ class ChestReader : FortniteReplayReader.ReplayReader
     protected override void OnChannelOpened(uint channelIndex, NetworkGUID actor)
     {
         if (actor != null) channelToActor[channelIndex] = actor.Value; else channelToActor.Remove(channelIndex);
+        channelKey.Remove(channelIndex);
         freshChannels.Add(channelIndex);
         base.OnChannelOpened(channelIndex, actor);
     }
@@ -119,12 +121,13 @@ class ChestReader : FortniteReplayReader.ReplayReader
 
     void OnContainer(uint channelIndex, string cls, bool? searched, bool? destroyed, uint? pawn)
     {
-        // shortcut: falls back to the channel index when the actor id is unknown, could double count; fix if totals look inflated
-        var key = channelToActor.TryGetValue(channelIndex, out var actorId) ? actorId : 0x80000000 | channelIndex;
         var name = cls[(cls.LastIndexOf('.') + 1)..];
+        var key = ChestKey(channelIndex, name);
         if (!chests.TryGetValue(key, out var chest)) chests[key] = chest = new ChestState();
         var opened = freshChannels.Remove(channelIndex);
         LootEvent made = null;
+        // A chest's first update after it loads carries its full state, so no pawn there means no opener we can name, not "unchanged".
+        if (opened && pawn == null) chest.Pawn = null;
 
         // The pawn is 0 while that player is out of view, then re-sent when they return: 0 means "unknown", not "nobody",
         // and not "the previous opener" either, or a refilled chest reopened out of view would be credited to whoever opened it before.
@@ -150,13 +153,30 @@ class ChestReader : FortniteReplayReader.ReplayReader
         {
             made.InView = !opened; // happened while the recorder could see it, as opposed to coming into view already looted
             Events.Add(made);
-            if (made.Opener == null && !made.Destroyed) chest.Pending = made;
+            // Only an open seen happening can wait for a late opener; a chest that arrives already looted would otherwise go to whoever touches it next.
+            if (made.Opener == null && !made.Destroyed && made.InView) chest.Pending = made;
         }
 
         if (debug && (searched != null || destroyed != null || pawn != null))
             log.AppendLine($"{time,9:F1} {(opened ? "NEW" : "   ")} {key,10} {name,-32} searched={B(searched)} destroyed={B(destroyed)} pawn={pawn?.ToString() ?? "-"} -> {Who(pawn)}"
                 + (made == null ? "" : $"   ==> {(made.Destroyed ? "DESTROYED" : "OPENED")} by {Tag(made.Opener)}"));
     }
+
+    // When the recorder leaves an area and comes back, its chests reload under new actor ids, already looted.
+    // So name a chest by something that survives the reload: a map chest's path name, or a spawned chest's class and X/Y
+    // (not Z: a buried chest rises when dug up).
+    string ChestKey(uint channelIndex, string name)
+    {
+        if (channelKey.TryGetValue(channelIndex, out var key)) return key;
+        // shortcut: falls back to the channel index when the actor id is unknown, could double count; fix if totals look inflated
+        if (!channelToActor.TryGetValue(channelIndex, out var id)) return $"channel {channelIndex}";
+        key = PathOf(id) ?? (Channels[channelIndex]?.Actor?.Location is { } at ? $"{name} @{Math.Round(at.X / 100)},{Math.Round(at.Y / 100)}" : $"actor {id}");
+        return channelKey[channelIndex] = key;
+    }
+
+    // The library keeps actor path names private, so read them by reflection; null if a library update renames them.
+    static readonly System.Reflection.FieldInfo guidCache = typeof(FortniteReplayReader.ReplayReader).BaseType?.GetField("_netGuidCache", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+    string PathOf(uint id) => guidCache?.GetValue(this) is { } cache && cache.GetType().GetProperty("NetGuidToPathName")?.GetValue(cache) is Dictionary<uint, string> paths && paths.TryGetValue(id, out var path) ? path : null;
 
     Player PlayerOfPawn(uint pawnId) => pawnToState.TryGetValue(pawnId, out var s) && Players.TryGetValue(s, out var p) ? p : null;
 
