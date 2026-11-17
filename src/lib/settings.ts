@@ -1,4 +1,5 @@
 import { TOKEN_ODDS } from "@/lib/stats";
+import { toSeasonStatsCache } from "@/lib/player-stats";
 import { readJson, writeJson } from "@/lib/storage";
 import type { Settings } from "@/types/settings.types";
 
@@ -8,6 +9,8 @@ export const DEFAULT_SETTINGS: Settings = {
   tokenOdds: TOKEN_ODDS,
   extraChestsYou: 0,
   extraChestsTeam: 0,
+  estimateMissedChests: false,
+  seasonStats: null,
   includeSquad: false,
   recount: false,
 };
@@ -22,6 +25,8 @@ export const toSettings = (s: unknown): Settings => {
     extraChestsYou,
     extraChestsTeam,
     extraChests: legacyExtraChests, // old chest setting conversion
+    estimateMissedChests,
+    seasonStats,
     includeSquad,
     recount,
   } = (s ?? {}) as Partial<Settings> & { extraChests?: number };
@@ -35,6 +40,8 @@ export const toSettings = (s: unknown): Settings => {
     extraChestsTeam: isWhole(extraChestsTeam, 0)
       ? extraChestsTeam
       : 0,
+    estimateMissedChests: estimateMissedChests === true,
+    seasonStats: toSeasonStatsCache(seasonStats),
     includeSquad: includeSquad === true,
     recount: recount === true,
   };

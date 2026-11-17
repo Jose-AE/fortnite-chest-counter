@@ -11,6 +11,7 @@ export interface ReplayFile {
 }
 
 export interface Match extends ReplayFile {
+  accountId?: string; // recorder's Epic account ID, read locally from the replay
   matchId: string; // used to skip the same match uploaded twice
   playlist: string; // solo, duo, squad...
   durationSeconds: number;

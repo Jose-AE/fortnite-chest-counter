@@ -63,6 +63,7 @@ export function Hero({
   onIncludeSquad,
   settings,
   onSettings,
+  onFetchEstimate,
 }: {
   summary: Summary;
   failed: number;
@@ -70,6 +71,7 @@ export function Hero({
   onIncludeSquad: (value: boolean) => void;
   settings: Settings;
   onSettings: (settings: Settings) => void;
+  onFetchEstimate: (apiKey: string) => void;
 }) {
   // extra chests alone are enough to show a total and a chance
   const counted = summary.total > 0;
@@ -85,7 +87,12 @@ export function Hero({
   const odds = settings.tokenOdds;
   const chance = tokenChance(summary.total, odds);
   const oddsChanged = odds !== DEFAULT_SETTINGS.tokenOdds;
-  const hasChips = counted && (oddsChanged || summary.extraChests > 0 || failed > 0);
+  const hasChips =
+    counted &&
+    (oddsChanged ||
+      summary.extraChests > 0 ||
+      summary.estimatedChests > 0 ||
+      failed > 0);
 
   return (
     // the chips already part the sentence from the switch, so with them the switch sits closer
@@ -181,6 +188,11 @@ export function Hero({
                     +{formatNumber(summary.extraChests)} by hand
                   </Tag>
                 )}
+                {summary.estimatedChests > 0 && (
+                  <Tag title="Includes chests estimated from current-season Fortnite playtime">
+                    +{formatNumber(summary.estimatedChests)} estimated
+                  </Tag>
+                )}
                 {failed > 0 && (
                   <Badge variant="destructive">{failed} not counted</Badge>
                 )}
@@ -222,7 +234,11 @@ export function Hero({
           </Tooltip>
         </div>
         <div className="grid size-[46px] place-items-center rounded-md border border-white/10 bg-black/30">
-          <SettingsDialog settings={settings} onChange={onSettings} />
+          <SettingsDialog
+            settings={settings}
+            onChange={onSettings}
+            onFetchEstimate={onFetchEstimate}
+          />
         </div>
       </div>
 
