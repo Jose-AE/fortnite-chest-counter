@@ -12,11 +12,14 @@ export const teammates = (m: Match) =>
   m.teamChestCountSearched + m.teamChestCountBroken;
 
 // Every number the page shows above the match list. With includeSquad, teammates' chests count towards all of them.
-// extraChests (added by hand) is in the total only: it belongs to no match, so the averages leave it out.
+// Extra and estimated chests are in the total only, so the match averages leave them out.
 export function summarize(
   matches: Match[],
   includeSquad: boolean,
-  extraChests = 0,
+  extraChestsYou = 0,
+  extraChestsTeam = 0,
+  estimatedChestsYou = 0,
+  estimatedChestsTeam = 0,
 ) {
   const count = (m: Match) => yours(m) + (includeSquad ? teammates(m) : 0);
   const sum = (value: (m: Match) => number) =>
@@ -25,6 +28,9 @@ export function summarize(
   const byYou = sum(yours);
   const byTeammates = sum(teammates);
   const squad = includeSquad ? byTeammates : 0;
+  const extraChests = extraChestsYou + (includeSquad ? extraChestsTeam : 0);
+  const estimatedChests =
+    estimatedChestsYou + (includeSquad ? estimatedChestsTeam : 0);
   const fromMatches = byYou + squad;
   const minutes = sum((m) => m.durationSeconds) / 60;
   const best = matches.reduce<Match | null>(
@@ -43,9 +49,11 @@ export function summarize(
     teammates: byTeammates, // always the full count, shown on its own tile
     squad, // the part of it that is in the total: all of it, or 0
     extraChests,
-    total: fromMatches + extraChests,
+    estimatedChests,
+    total: fromMatches + extraChests + estimatedChests,
     perMatch: matches.length > 0 ? fromMatches / matches.length : 0,
     perMinute: minutes > 0 ? fromMatches / minutes : 0,
+    totalMinutes: Math.floor(minutes),
     best: best && { count: count(best), date: best.date },
     from: Math.min(...times),
     to: Math.max(...times),

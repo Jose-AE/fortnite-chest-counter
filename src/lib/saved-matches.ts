@@ -26,6 +26,7 @@ export const toMatches = (list: unknown[]) =>
   list.filter(
     (m): m is Match =>
       isReplayFile(m) &&
+      ((m as Match).accountId === undefined || typeof (m as Match).accountId === "string") &&
       typeof (m as Match).matchId === "string" &&
       typeof (m as Match).playlist === "string" &&
       typeof (m as Match).date === "string" &&

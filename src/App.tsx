@@ -11,6 +11,11 @@ import { toast } from "@/components/ui/toast";
 import { downloadBackup, readBackup } from "@/lib/backup";
 import { formatCount } from "@/lib/format";
 import {
+  estimateMissedChests,
+  fetchSeasonMinutes,
+  replayAccountId,
+} from "@/lib/player-stats";
+import {
   cancelParsing,
   PARALLEL,
   parseReplay,
@@ -57,7 +62,10 @@ function App() {
     setSettings(next);
   };
   const importMatches = async (file: File) => {
-    const { matches: incoming, settings: imported } = await readBackup(file);
+    const {
+      matches: incoming,
+      settings: imported,
+    } = await readBackup(file);
     if (imported) updateSettings(imported);
     if (incoming.length === 0 && !imported) {
       toast.add({
@@ -81,6 +89,28 @@ function App() {
             : "No matches in that file",
       description: imported ? "Settings were imported too." : undefined,
     });
+  };
+  const fetchEstimate = async (apiKey: string) => {
+    try {
+      const accountId = replayAccountId(matches);
+      const freshStats = await fetchSeasonMinutes(accountId, apiKey);
+      setSettings((current) => {
+        const next = { ...current, seasonStats: freshStats };
+        saveSettings(next);
+        return next;
+      });
+      toast.add({
+        type: "success",
+        title: "Season playtime updated",
+        description: "Estimated chest counts have been recalculated.",
+      });
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Season playtime fetch failed",
+        description: error instanceof Error ? error.message : "Fetch failed.",
+      });
+    }
   };
   const cancelled = useRef(false);
   const cancel = () => {
@@ -179,7 +209,17 @@ function App() {
       });
   };
 
-  const summary = summarize(matches, includeSquad, settings.extraChests);
+  const estimate = settings.estimateMissedChests
+    ? estimateMissedChests(matches, settings.seasonStats)
+    : { you: 0, team: 0 };
+  const summary = summarize(
+    matches,
+    includeSquad,
+    settings.extraChestsYou,
+    settings.extraChestsTeam,
+    estimate.you,
+    estimate.team,
+  );
 
   return (
     <div className="relative min-h-svh">
@@ -220,6 +260,7 @@ function App() {
             }
             settings={settings}
             onSettings={updateSettings}
+            onFetchEstimate={fetchEstimate}
           />
           {/* drop zone with the one yellow button under it, like a search box. The row stretches both columns to one height, so the drop zone fills what the list and button leave */}
           <section className="mx-auto flex w-full max-w-lg flex-col gap-2.5">
