@@ -6,7 +6,8 @@ const SETTINGS_KEY = "chest-counter:settings";
 
 export const DEFAULT_SETTINGS: Settings = {
   tokenOdds: TOKEN_ODDS,
-  extraChests: 0,
+  extraChestsYou: 0,
+  extraChestsTeam: 0,
   includeSquad: false,
   recount: false,
 };
@@ -16,10 +17,24 @@ const isWhole = (n: unknown, min: number): n is number =>
 
 // Settings from storage or an imported file; a missing or bad field falls back to its default.
 export const toSettings = (s: unknown): Settings => {
-  const { tokenOdds, extraChests, includeSquad, recount } = (s ?? {}) as Partial<Settings>;
+  const {
+    tokenOdds,
+    extraChestsYou,
+    extraChestsTeam,
+    extraChests: legacyExtraChests, // old chest setting conversion
+    includeSquad,
+    recount,
+  } = (s ?? {}) as Partial<Settings> & { extraChests?: number };
   return {
     tokenOdds: isWhole(tokenOdds, 1) ? tokenOdds : DEFAULT_SETTINGS.tokenOdds,
-    extraChests: isWhole(extraChests, 0) ? extraChests : 0,
+    extraChestsYou: isWhole(extraChestsYou, 0)
+      ? extraChestsYou
+      : isWhole(legacyExtraChests, 0)
+        ? legacyExtraChests
+        : 0,
+    extraChestsTeam: isWhole(extraChestsTeam, 0)
+      ? extraChestsTeam
+      : 0,
     includeSquad: includeSquad === true,
     recount: recount === true,
   };

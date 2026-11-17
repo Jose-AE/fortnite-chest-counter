@@ -179,7 +179,12 @@ function App() {
       });
   };
 
-  const summary = summarize(matches, includeSquad, settings.extraChests);
+  const summary = summarize(
+    matches,
+    includeSquad,
+    settings.extraChestsYou,
+    settings.extraChestsTeam,
+  );
 
   return (
     <div className="relative min-h-svh">

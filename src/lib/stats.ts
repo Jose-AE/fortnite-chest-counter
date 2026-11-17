@@ -16,7 +16,8 @@ export const teammates = (m: Match) =>
 export function summarize(
   matches: Match[],
   includeSquad: boolean,
-  extraChests = 0,
+  extraChestsYou = 0,
+  extraChestsTeam = 0,
 ) {
   const count = (m: Match) => yours(m) + (includeSquad ? teammates(m) : 0);
   const sum = (value: (m: Match) => number) =>
@@ -25,6 +26,7 @@ export function summarize(
   const byYou = sum(yours);
   const byTeammates = sum(teammates);
   const squad = includeSquad ? byTeammates : 0;
+  const extraChests = extraChestsYou + (includeSquad ? extraChestsTeam : 0);
   const fromMatches = byYou + squad;
   const minutes = sum((m) => m.durationSeconds) / 60;
   const best = matches.reduce<Match | null>(
