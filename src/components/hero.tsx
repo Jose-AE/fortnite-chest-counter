@@ -1,5 +1,6 @@
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tag } from "@/components/ui/tag";
 import {
   Tooltip,
   TooltipContent,
@@ -75,6 +76,12 @@ export function Hero({
   const from = formatDay(summary.from);
   const to = formatDay(summary.to);
   const total = formatNumber(summary.total);
+  const hours = Math.floor(summary.totalMinutes / 60);
+  const minutes = summary.totalMinutes % 60;
+  const playtime =
+    hours > 0
+      ? `${hours}h${minutes > 0 ? ` ${minutes}m` : ""}`
+      : `${minutes}m`;
   const odds = settings.tokenOdds;
   const chance = tokenChance(summary.total, odds);
   const oddsChanged = odds !== DEFAULT_SETTINGS.tokenOdds;
@@ -92,7 +99,7 @@ export function Hero({
       <div className="flex flex-col gap-3 font-heading uppercase">
         <p className="text-lg leading-none font-extrabold tracking-wide text-white/60">
           {summary.matchCount > 0
-            ? `${from === to ? from : `${from} to ${to}`} · ${formatCount(summary.matchCount, "match")}`
+            ? `${from === to ? from : `${from} to ${to}`} · ${formatCount(summary.matchCount, "match")} · ${playtime}`
             : "Add your replays to start"}
         </p>
         <p className="flex flex-wrap items-baseline justify-center gap-x-4 lg:justify-start">
@@ -168,12 +175,11 @@ export function Hero({
                   </span>
                 )}
                 {summary.extraChests > 0 && (
-                  <span
+                  <Tag
                     title={`Includes ${formatCount(summary.extraChests, "chest")} added by hand`}
-                    className="rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-xs leading-none whitespace-nowrap text-primary"
                   >
                     +{formatNumber(summary.extraChests)} by hand
-                  </span>
+                  </Tag>
                 )}
                 {failed > 0 && (
                   <Badge variant="destructive">{failed} not counted</Badge>

@@ -46,6 +46,7 @@ export function summarize(
     total: fromMatches + extraChests,
     perMatch: matches.length > 0 ? fromMatches / matches.length : 0,
     perMinute: minutes > 0 ? fromMatches / minutes : 0,
+    totalMinutes: Math.floor(minutes),
     best: best && { count: count(best), date: best.date },
     from: Math.min(...times),
     to: Math.max(...times),
