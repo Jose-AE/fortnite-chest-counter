@@ -1,5 +1,4 @@
 import { SettingsDialog } from "@/components/settings-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Tag } from "@/components/ui/tag";
 import {
   Tooltip,
@@ -181,6 +180,11 @@ export function Hero({
                     Custom odds
                   </span>
                 )}
+                {summary.estimatedChests > 0 && (
+                  <Tag title="Includes chests estimated from current-season Fortnite playtime">
+                    +{formatNumber(summary.estimatedChests)} estimated
+                  </Tag>
+                )}
                 {summary.extraChests > 0 && (
                   <Tag
                     title={`Includes ${formatCount(summary.extraChests, "chest")} added by hand`}
@@ -188,13 +192,10 @@ export function Hero({
                     +{formatNumber(summary.extraChests)} by hand
                   </Tag>
                 )}
-                {summary.estimatedChests > 0 && (
-                  <Tag title="Includes chests estimated from current-season Fortnite playtime">
-                    +{formatNumber(summary.estimatedChests)} estimated
-                  </Tag>
-                )}
                 {failed > 0 && (
-                  <Badge variant="destructive">{failed} not counted</Badge>
+                  <Tag color="destructive">
+                    {failed} not counted
+                  </Tag>
                 )}
               </span>
             )}
@@ -245,7 +246,9 @@ export function Hero({
       {/* before anything is counted the chip row above is hidden, so a failed first count still shows here */}
       {!counted && failed > 0 && (
         <p className="flex justify-center lg:justify-start">
-          <Badge variant="destructive">{failed} not counted</Badge>
+          <Tag color="destructive">
+            {failed} not counted
+          </Tag>
         </p>
       )}
     </div>
