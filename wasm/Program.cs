@@ -20,6 +20,7 @@ partial class Api
         var team = chests.Where(e => e.Opener != me && me.Team != null && e.Opener.Team == me.Team).ToList();
         return new JsonObject
         {
+            ["accountId"] = me.EpicId ?? "",
             ["matchId"] = replay.GameData?.GameSessionId ?? "",
             ["playlist"] = replay.GameData?.CurrentPlaylist ?? "",
             ["durationSeconds"] = (int)(replay.Info.LengthInMs / 1000),

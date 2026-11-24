@@ -1,5 +1,5 @@
 import { SettingsDialog } from "@/components/settings-dialog";
-import { Badge } from "@/components/ui/badge";
+import { Tag } from "@/components/ui/tag";
 import {
   Tooltip,
   TooltipContent,
@@ -62,6 +62,7 @@ export function Hero({
   onIncludeSquad,
   settings,
   onSettings,
+  onFetchEstimate,
 }: {
   summary: Summary;
   failed: number;
@@ -69,16 +70,28 @@ export function Hero({
   onIncludeSquad: (value: boolean) => void;
   settings: Settings;
   onSettings: (settings: Settings) => void;
+  onFetchEstimate: (apiKey: string) => void;
 }) {
   // extra chests alone are enough to show a total and a chance
   const counted = summary.total > 0;
   const from = formatDay(summary.from);
   const to = formatDay(summary.to);
   const total = formatNumber(summary.total);
+  const hours = Math.floor(summary.totalMinutes / 60);
+  const minutes = summary.totalMinutes % 60;
+  const playtime =
+    hours > 0
+      ? `${hours}h${minutes > 0 ? ` ${minutes}m` : ""}`
+      : `${minutes}m`;
   const odds = settings.tokenOdds;
   const chance = tokenChance(summary.total, odds);
   const oddsChanged = odds !== DEFAULT_SETTINGS.tokenOdds;
-  const hasChips = counted && (oddsChanged || summary.extraChests > 0 || failed > 0);
+  const hasChips =
+    counted &&
+    (oddsChanged ||
+      summary.extraChests > 0 ||
+      summary.estimatedChests > 0 ||
+      failed > 0);
 
   return (
     // the chips already part the sentence from the switch, so with them the switch sits closer
@@ -92,7 +105,7 @@ export function Hero({
       <div className="flex flex-col gap-3 font-heading uppercase">
         <p className="text-lg leading-none font-extrabold tracking-wide text-white/60">
           {summary.matchCount > 0
-            ? `${from === to ? from : `${from} to ${to}`} · ${formatCount(summary.matchCount, "match")}`
+            ? `${from === to ? from : `${from} to ${to}`} · ${formatCount(summary.matchCount, "match")} · ${playtime}`
             : "Add your replays to start"}
         </p>
         <p className="flex flex-wrap items-baseline justify-center gap-x-4 lg:justify-start">
@@ -167,16 +180,22 @@ export function Hero({
                     Custom odds
                   </span>
                 )}
+                {summary.estimatedChests > 0 && (
+                  <Tag title="Includes chests estimated from current-season Fortnite playtime">
+                    +{formatNumber(summary.estimatedChests)} estimated
+                  </Tag>
+                )}
                 {summary.extraChests > 0 && (
-                  <span
+                  <Tag
                     title={`Includes ${formatCount(summary.extraChests, "chest")} added by hand`}
-                    className="rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-xs leading-none whitespace-nowrap text-primary"
                   >
                     +{formatNumber(summary.extraChests)} by hand
-                  </span>
+                  </Tag>
                 )}
                 {failed > 0 && (
-                  <Badge variant="destructive">{failed} not counted</Badge>
+                  <Tag color="destructive">
+                    {failed} not counted
+                  </Tag>
                 )}
               </span>
             )}
@@ -216,14 +235,20 @@ export function Hero({
           </Tooltip>
         </div>
         <div className="grid size-[46px] place-items-center rounded-md border border-white/10 bg-black/30">
-          <SettingsDialog settings={settings} onChange={onSettings} />
+          <SettingsDialog
+            settings={settings}
+            onChange={onSettings}
+            onFetchEstimate={onFetchEstimate}
+          />
         </div>
       </div>
 
       {/* before anything is counted the chip row above is hidden, so a failed first count still shows here */}
       {!counted && failed > 0 && (
         <p className="flex justify-center lg:justify-start">
-          <Badge variant="destructive">{failed} not counted</Badge>
+          <Tag color="destructive">
+            {failed} not counted
+          </Tag>
         </p>
       )}
     </div>
