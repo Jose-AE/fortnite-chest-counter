@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { RiCloseLine, RiUploadCloud2Line } from "@remixicon/react";
+import { ReplayHelpDialog } from "@/components/replay-help-dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -110,11 +111,12 @@ export function ReplayPicker({
         {files.length === 0 && (
           <p className="text-xs text-muted-foreground">
             The files never leave your device. Replays are in
-            <code className="mt-1 block text-white/80">
-              %LOCALAPPDATA%\FortniteGame\Saved\Demos
+            <code className="mt-1 block break-all text-white/80">
+              C:\Users\&lt;username&gt;\AppData\Local\FortniteGame\Saved\Demos
             </code>
           </p>
         )}
+        {files.length === 0 && <ReplayHelpDialog />}
         <input
           ref={fileInput}
           type="file"

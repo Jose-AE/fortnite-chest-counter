@@ -13,6 +13,7 @@ partial class Api
     {
         var reader = new ChestReader(ParseMode.Normal, false);
         var replay = reader.ReadReplay(new MemoryStream(bytes));
+        reader.CreditCollapses();
         var me = reader.Me ?? throw new InvalidDataException("could not tell which player recorded this replay");
         var chests = reader.Events.Where(e => e.Opener != null && e.Class.Contains("Chest", StringComparison.OrdinalIgnoreCase)).ToList();
         var mine = chests.Where(e => e.Opener == me).ToList();

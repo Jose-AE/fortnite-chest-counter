@@ -1,4 +1,5 @@
 import { RiCupFill, RiGithubFill } from "@remixicon/react";
+import { InfoDialog } from "@/components/info-dialog";
 
 const LINKS = [
   {
@@ -20,6 +21,7 @@ export function Links() {
       aria-label="Author links"
       className="flex gap-1"
     >
+      <InfoDialog />
       {LINKS.map(({ label, href, icon: Icon }) => (
         <a
           key={href}

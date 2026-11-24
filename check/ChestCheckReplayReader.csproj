@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Regression check for the replay reader in wasm/, run on the desktop. See check/Program.cs for how to run it. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Name must contain "ReplayReader": the parser only scans such assemblies for export classes. -->
+    <AssemblyName>ChestCheckReplayReader</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FortniteReplayReader" Version="3.1.0" />
+    <Compile Include="../wasm/ChestReader.cs" />
+    <Compile Include="../wasm/AesEcb.cs" />
+  </ItemGroup>
+</Project>

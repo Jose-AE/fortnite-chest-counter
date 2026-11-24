@@ -31,3 +31,5 @@ wasm/obj
 archive
 
 .playwright-mcp
+check/bin
+check/obj
